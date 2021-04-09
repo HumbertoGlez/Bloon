@@ -32,8 +32,9 @@ var_k: '.' var | ;
 
 var_dec: 'vars' var_dec_t;
 var_dec_t: ID arr var_dec_k | ID var_dec_k;
-var_dec_k: ',' var_dec_t | ':' var_type ';' var_dec_p;
-var_dec_p: var_dec_t | ;
+var_dec_k: ',' var_dec_t | ':' var_dec_p;
+var_dec_p: var_type ';' var_dec_l | custom_type ';' var_dec_l;
+var_dec_l: var_dec_t | ;
 
 arr_idx: '[' exp arr_idx_t;
 arr_idx_t: ',' exp ']' | ']';
@@ -44,7 +45,9 @@ arr_t: ',' CONST_INT ']' | ']';
 assign: var assign_t;
 assign_t: '=' super_exp ';' | assign_op super_exp ';';
 
-var_type: 'int' | 'float' | 'char' | ID;
+var_type: 'int' | 'float' | 'char' | 'string';
+
+custom_type: ID;
 
 assign_op: '+' '=' | '-' '=' | '*' '=' | '/' '=';   
 
@@ -58,7 +61,7 @@ func_t: param func_k | func_k;
 func_k: ')' ';' func_p;
 func_p: var_dec block | block;
 
-param: var_type ID param_t;
+param: var_type ID param_t | custom_type ID param_t;
 param_t: ',' param | ;
 
 block: '{' block_t;

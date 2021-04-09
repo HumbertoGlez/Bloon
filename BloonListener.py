@@ -152,6 +152,15 @@ class BloonListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BloonParser#var_dec_l.
+    def enterVar_dec_l(self, ctx:BloonParser.Var_dec_lContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#var_dec_l.
+    def exitVar_dec_l(self, ctx:BloonParser.Var_dec_lContext):
+        pass
+
+
     # Enter a parse tree produced by BloonParser#arr_idx.
     def enterArr_idx(self, ctx:BloonParser.Arr_idxContext):
         pass
@@ -212,6 +221,15 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#var_type.
     def exitVar_type(self, ctx:BloonParser.Var_typeContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#custom_type.
+    def enterCustom_type(self, ctx:BloonParser.Custom_typeContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#custom_type.
+    def exitCustom_type(self, ctx:BloonParser.Custom_typeContext):
         pass
 
 
