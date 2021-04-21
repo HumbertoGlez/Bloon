@@ -1,5 +1,10 @@
 grammar Bloon;
 
+@header {
+    from BloonCompiler import Compiler
+    compi = Compiler()
+}
+
 /*
  * Lexer Rules
  */
@@ -26,14 +31,12 @@ class_j: 'attributes' '<' var_dec '>' class_l | class_l;
 class_l: 'methods' '<' class_p | '}' ';';
 class_p: func '>' '}' ';' | func class_p;
 
-var: ID var_t;
+var: ID var_t {compi.get_var($ID.text)};
 var_t: arr_idx var_k | var_k;
 var_k: '.' var | ;
 
 var_dec: 'vars' var_dec_t;
-var_dec_t: ID arr var_dec_k | ID var_dec_k;
-var_dec_k: ',' var_dec_t | ':' var_dec_p;
-var_dec_p: var_type ';' var_dec_l | custom_type ';' var_dec_l;
+var_dec_t: ID (arr)? {compi.add_operand($ID.text); compi.increase_varCount()} (',' var_dec_t | ':' (var_type {compi.define_var($var_type.text)}';' var_dec_l | custom_type {compi.define_var($custom_type.text)} ';' var_dec_l));
 var_dec_l: var_dec_t | ;
 
 arr_idx: '[' exp arr_idx_t;
@@ -43,7 +46,7 @@ arr: '[' CONST_INT arr_t;
 arr_t: ',' CONST_INT ']' | ']';
 
 assign: var assign_t;
-assign_t: '=' super_exp ';' | assign_op super_exp ';';
+assign_t: '=' {compi.add_op('=')} super_exp {compi.assign_var()}';' | assign_op {compi.add_op($assign_op.text)} super_exp {compi.assign_var()} ';';
 
 var_type: 'int' | 'float' | 'char' | 'string';
 
@@ -67,7 +70,7 @@ param_t: ',' param | ;
 block: '{' block_t;
 block_t: statement block_t | statement '}' | '}';
 
-r_return: 'return' '(' super_exp ')' ';';
+r_return: 'return' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} ';';
 
 call: var '(' call_t;
 call_t: call_args ')' | ')';
@@ -77,34 +80,34 @@ call_args_t: ',' call_args | ;
 
 call_void: call ';';
 
-read: 'read' '(' read_t;
-read_t: var read_k;
-read_k: ',' read_t | ')' ';';
+read: 'read' '(' {compi.add_op('(')} read_t;
+read_t: var {compi.call_method('read')} read_k;
+read_k: ',' read_t | ')' {compi.close_parens()} ';';
 
-write: 'write' '(' write_t;
-write_t: super_exp write_k | call write_k;
-write_k: ',' write_t | ')' ';'; 
+write: 'write' '(' {compi.add_op('(')} write_t;
+write_t: super_exp {compi.call_method('write')} write_k | CONST_STR {compi.get_const($CONST_STR.text, "string"); compi.call_method('write')} write_k | call write_k;
+write_k: ',' write_t | ')' {compi.close_parens()} ';'; 
 
-cond: 'cond' '(' super_exp ')' 'then' block cond_t;
+cond: 'cond' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} 'then' block cond_t;
 cond_t: 'else' block | ;
 
-r_while: 'while' '(' super_exp ')' 'do' block;
+r_while: 'while' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} 'do' block;
 
 floop: 'floop' var 'to' super_exp 'do' block;
 
 super_exp: expression super_exp_t;
 super_exp_t: 'and' super_exp | 'or' super_exp | ;
 
-expression: '!' exp expression_t | exp expression_t;
-expression_t: '>' exp | '<' exp | '<=' exp | '>=' exp | '==' exp | '!=' exp | ;
+expression: '!' exp expression_t | exp expression_t {compi.arithmetic_operation()};
+expression_t: '>' {compi.add_op('>')} exp | '<' {compi.add_op('<')} exp | '<=' {compi.add_op('<=')} exp | '>=' {compi.add_op('>=')} exp | '==' {compi.add_op('==')} exp | '!=' {compi.add_op('!=')} exp | ;
 
-exp: term exp_t;
-exp_t: '+' exp | '-' exp | ;
+exp: term exp_t {compi.arithmetic_operation()};
+exp_t: '+' {compi.add_op('+')} exp | '-' {compi.add_op('-')} exp | ;
 
-term: factor term_t;
-term_t: '*' term | '/' term | ;
+term: factor term_t {compi.arithmetic_operation()};
+term_t: '*' {compi.add_op('*')} term | '/' {compi.add_op('/')} term | ;
 
-factor: '(' expression ')' | var_const | call | factor_t;
+factor: '(' {compi.add_op('(')} expression ')' {compi.close_parens()} | var_const | call | factor_t;
 factor_t: '+' var_const | '-' var_const;
 
-var_const: var | CONST_INT | CONST_FLOAT | CONST_STR;
+var_const: var | CONST_INT {compi.get_const($CONST_INT.text, "int")} | CONST_FLOAT {compi.get_const($CONST_FLOAT.text, "float")} | CONST_STR {compi.get_const($CONST_STR.text, "string")};

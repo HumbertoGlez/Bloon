@@ -5,6 +5,10 @@ if __name__ is not None and "." in __name__:
 else:
     from BloonParser import BloonParser
 
+    from BloonCompiler import Compiler
+    compi = Compiler()
+
+
 # This class defines a complete listener for a parse tree produced by BloonParser.
 class BloonListener(ParseTreeListener):
 
@@ -131,24 +135,6 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#var_dec_t.
     def exitVar_dec_t(self, ctx:BloonParser.Var_dec_tContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#var_dec_k.
-    def enterVar_dec_k(self, ctx:BloonParser.Var_dec_kContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#var_dec_k.
-    def exitVar_dec_k(self, ctx:BloonParser.Var_dec_kContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#var_dec_p.
-    def enterVar_dec_p(self, ctx:BloonParser.Var_dec_pContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#var_dec_p.
-    def exitVar_dec_p(self, ctx:BloonParser.Var_dec_pContext):
         pass
 
 

@@ -8,6 +8,10 @@ else:
     from typing.io import TextIO
 
 
+    from BloonCompiler import Compiler
+    compi = Compiler()
+
+
 
 def serializedATN():
     with StringIO() as buf:
