@@ -22,7 +22,7 @@ WHITESPACE: [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 program: 'program' ID ';' program_t;
 program_t: r_class program_t | var_dec program_t | func program_t | main;
 
-main: 'main' '(' ')' block;
+main: 'main' '(' {compi.open_parens()} ')' {compi.close_parens()} block;
 
 r_class: 'class' ID class_t;
 class_t: '<' 'inherits' ID '>' class_k | class_k;
@@ -46,7 +46,7 @@ arr: '[' CONST_INT arr_t;
 arr_t: ',' CONST_INT ']' | ']';
 
 assign: var assign_t;
-assign_t: '=' {compi.add_op('=')} super_exp {compi.assign_var()}';' | assign_op {compi.add_op($assign_op.text)} super_exp {compi.assign_var()} ';';
+assign_t: '=' super_exp {compi.assign_var()}';' | assign_op super_exp {compi.arithmetic_assign($assign_op.text)} ';';
 
 var_type: 'int' | 'float' | 'char' | 'string';
 
@@ -59,9 +59,9 @@ type_meth: var_type | 'void';
 statement: assign | cond | r_return | read | write | r_while | floop | call_void;
 
 
-func: type_meth 'meth' ID '(' func_t;
+func: type_meth 'meth' ID '(' {compi.open_parens()} func_t;
 func_t: param func_k | func_k;
-func_k: ')' ';' func_p;
+func_k: ')' {compi.close_parens()} ';' func_p;
 func_p: var_dec block | block;
 
 param: var_type ID param_t | custom_type ID param_t;
@@ -70,28 +70,28 @@ param_t: ',' param | ;
 block: '{' block_t;
 block_t: statement block_t | statement '}' | '}';
 
-r_return: 'return' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} ';';
+r_return: 'return' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} ';';
 
-call: var '(' call_t;
-call_t: call_args ')' | ')';
+call: var '(' {compi.open_parens()} call_t;
+call_t: call_args ')' {compi.close_parens()} | ')' {compi.close_parens()};
 
 call_args: super_exp call_args_t | call call_args_t;
 call_args_t: ',' call_args | ;
 
 call_void: call ';';
 
-read: 'read' '(' {compi.add_op('(')} read_t;
+read: 'read' '('  {compi.open_parens()} read_t;
 read_t: var {compi.call_method('read')} read_k;
 read_k: ',' read_t | ')' {compi.close_parens()} ';';
 
-write: 'write' '(' {compi.add_op('(')} write_t;
+write: 'write' '(' {compi.open_parens()} write_t;
 write_t: super_exp {compi.call_method('write')} write_k | CONST_STR {compi.get_const($CONST_STR.text, "string"); compi.call_method('write')} write_k | call write_k;
 write_k: ',' write_t | ')' {compi.close_parens()} ';'; 
 
-cond: 'cond' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} 'then' block cond_t;
+cond: 'cond' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} 'then' block cond_t;
 cond_t: 'else' block | ;
 
-r_while: 'while' '(' {compi.add_op('(')} super_exp ')' {compi.close_parens()} 'do' block;
+r_while: 'while' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} 'do' block;
 
 floop: 'floop' var 'to' super_exp 'do' block;
 
@@ -107,7 +107,7 @@ exp_t: '+' {compi.add_op('+')} exp | '-' {compi.add_op('-')} exp | ;
 term: factor term_t {compi.arithmetic_operation()};
 term_t: '*' {compi.add_op('*')} term | '/' {compi.add_op('/')} term | ;
 
-factor: '(' {compi.add_op('(')} expression ')' {compi.close_parens()} | var_const | call | factor_t;
+factor: '(' {compi.open_parens()} expression ')' {compi.close_parens()} | var_const | call | factor_t;
 factor_t: '+' var_const | '-' var_const;
 
 var_const: var | CONST_INT {compi.get_const($CONST_INT.text, "int")} | CONST_FLOAT {compi.get_const($CONST_FLOAT.text, "float")} | CONST_STR {compi.get_const($CONST_STR.text, "string")};

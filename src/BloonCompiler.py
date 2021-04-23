@@ -74,11 +74,11 @@ def define_var(self, v_type):
         var_id = self.operand_stack.pop().op_id
         self.newVar_count = self.newVar_count - 1
     else:
-        raise Exception("Unknown error at variable declaration of type {v_type}.")
+        raise Exception(f"Unknown error at variable declaration of type {v_type}.")
 
     for given_type, var_dir in var_table.items():
         if var_id in var_dir:
-            raise Exception("A variable named {var_id} was already defined with type {given_type}")
+            raise Exception(f"A variable named {var_id} was already defined with type {given_type}")
     else:
         isGlobal = self.method_stack[-1] == "global"
         var_dir = self.get_var_dir(v_type)
@@ -95,6 +95,24 @@ def assign_var(self):
     isGlobal = self.method_stack[-1] == 'global'
 
     self.quad_queue.put(Quadruple('ASSIGN', res, None, left_op))
+
+def arithmetic_assign(self, op):
+    op = op.strip('=')
+    if op in ['+', '-', '*', '/']:
+        right_oper = self.operand_stack.pop()
+        right_type = self.type_stack.pop()
+        left_oper = self.operand_stack[-1]
+        left_type = self.type_stack[-1]
+        result_type = operation_result_type(op, left_type, right_type)
+
+        method = self.method_stack[-1]
+        res_oper = Operand(f't{self.temp}', method == 'global')
+        self.operand_stack.append(res_oper)
+        self.quad_queue.put(Quadruple(op, left_oper, right_oper, res_oper))
+        self.temp = self.temp + 1
+        self.assign_var()
+    else:
+        raise Exception(f'Invalid operator: {op} for assignment')
 
 def add_operand(self, o):
     self.operand_stack.append(Operand(o))
@@ -145,6 +163,9 @@ def arithmetic_operation(self):
 
 def increase_varCount(self):
     self.newVar_count = self.newVar_count + 1
+
+def open_parens(self):
+    self.operator_stack.append('(')
 
 def close_parens(self):
     if self.operator_stack[-1] == '(':
