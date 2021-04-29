@@ -38,7 +38,8 @@ class Compiler:
     meth_dir = {
         "global": Method('void', {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}}),
         "main": Method('int',  {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}}),
-        "read": Method('void', {})
+        "read": Method('void', {}),
+        "write": Method('void', {}),
     }
     method_stack = deque(["global"])
     operator_stack = deque()
@@ -47,6 +48,8 @@ class Compiler:
     quad_queue = Queue()
     temp = 0
     newVar_count = 0
+    constants = {'int': {}, 'float': {}, 'string': {}, 'char': {}}
+    gotos = []
 
 def add_method(self, method_type, method_id):
     if  m_name in self.meth_dir:
@@ -189,6 +192,7 @@ def get_const(self, const_id, const_type):
         dir[const_id] = Var(True, None)
     self.operand_stack.append(Operand(const_id, True))
     self.type_stack.append(const_type)
+    self.constants[const_type] = const_id
 
 def call_method(self, id):
     method = self.meth_dir[id]
@@ -201,3 +205,70 @@ def call_method(self, id):
         res = self.operand_stack.pop()
         res_type = self.type_stack.pop()
         self.quad_queue.put(Quadruple("WRITE", None, None, res))
+
+def fill(self, quad_idx, cont):
+    self.quad_queue[quad_idx].ans = cont
+    
+def condition(self):
+    exp_type = self.type_stack.pop()
+    if (exp_type != 'int'):
+        raise Exception("Unexpected type for condition")
+    else:
+        result = self.operand_stack.pop()
+        self.quad_queue.put(Quadruple("GOTOFALSE", result))
+        self.gotos.append(len(self.quad_queue) - 1)
+
+def end_condition(self):
+    end = self.gotos.pop()
+    self.fill(end, len(self.quad_queue))
+
+def else_condition(self):
+    self.quad_queue.put(Quadruple("GOTO"))
+    false = self.gotos.pop()
+    self.gotos.append(len(self.quad_queue) - 1)
+    self.fill(false, len(self.quad_queue) - 1)
+
+def while_condition(self):
+    self.gotos.append(len(self.quad_queue))
+
+def while_expression(self):
+    exp_type = self.type_stack.pop()
+    if(exp_type != 'int'):
+        raise Exception("Unexpected type for condition")
+    else:
+        result = self.operand_stack.pop()
+        self.quad_queue.put(Quadruple("GOTOFALSE", result))
+        self.gotos.append(len(self.quad_queue) - 1)
+
+def while_end(self):
+    end = self.gotos.pop()
+    rtn = self.gotos.pop()
+    self.quad_queue.put("GOTO", rtn)
+    self.fill(end, len(self.quad_queue))
+
+def floop(self):
+    exp_type = self.type_stack.pop()
+    var_type = self.type_stack.pop()
+    if (var_type != 'int'):
+        raise Exception("Unexpected type for floop loop var")
+    elif (exp_type != 'int'):
+        raise Exception("Unexpected type for floop loop expression")
+    else:
+        exp = self.operand_stack.pop()
+        var = self.operand_stack.pop()
+        result_type = operation_result_type('<=', var_type, exp_type)
+
+        method = self.method_stack[-1]
+        res_compare = Operand(f't{self.temp}', method == 'global')
+        self.quad_queue.put(Quadruple("FLOOP", var, exp, res_compare))
+        self.temp = self.temp + 1
+        
+        self.quad_queue.put(Quadruple("GOTOFALSE", res_compare))
+        self.gotos.append(len(self.quad_queue - 1))
+
+def floop_end(self):
+    end = self.gotos.pop()
+    rtn = self.gotos.pop()
+    self.quad_queue.put(Quadruple("GOTO", rtn))
+    self.fill(end, len(self.quad_queue))
+

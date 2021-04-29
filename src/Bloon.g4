@@ -52,7 +52,7 @@ var_type: 'int' | 'float' | 'char' | 'string';
 
 custom_type: ID;
 
-assign_op: '+' '=' | '-' '=' | '*' '=' | '/' '=';   
+assign_op: '+=' | '-=' | '*=' | '/=';   
 
 type_meth: var_type | 'void';
 
@@ -88,12 +88,12 @@ write: 'write' '(' {compi.open_parens()} write_t;
 write_t: super_exp {compi.call_method('write')} write_k | CONST_STR {compi.get_const($CONST_STR.text, "string"); compi.call_method('write')} write_k | call write_k;
 write_k: ',' write_t | ')' {compi.close_parens()} ';'; 
 
-cond: 'cond' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} 'then' block cond_t;
-cond_t: 'else' block | ;
+cond: 'cond' '(' {compi.open_parens()} super_exp ')' {compi.close_parens(); compi.condition()} 'then' block cond_t {compi.end_condition()};
+cond_t: 'else' {compi.else_condition()} block | ;
 
-r_while: 'while' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} 'do' block;
+r_while: 'while' {compi.while_condition()} '(' {compi.open_parens()} super_exp ')' {compi.close_parens(); compi.while_expression()} 'do' block {compi.while_end()};
 
-floop: 'floop' var 'to' super_exp 'do' block;
+floop: 'floop' var 'to' super_exp {compi.floop()} 'do' block {compi.floop_end()};
 
 super_exp: expression super_exp_t;
 super_exp_t: 'and' super_exp | 'or' super_exp | ;

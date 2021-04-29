@@ -9,3 +9,6 @@ Se realizó el diseño de las tablas de métodos y variables y se implementaron 
 
 Avance 3:
 Se implementaron los cuádruplos para la generación de código y se realizaron las funciones necesarias para la generación de código de expresiones aritméticas y estatutos de asignación, lectura y escritura.
+
+Avance 4:
+Se implementaron las funciones necesarias para la generación de código para los estatutos condicionales y cíclicos (while y for loop). También se hizo una reestructuración del código del cubo semántico de operaciones, para optimizar el tiempo y mejorar la implementación.
