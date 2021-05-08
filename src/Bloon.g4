@@ -59,10 +59,10 @@ type_meth: var_type | 'void';
 statement: assign | cond | r_return | read | write | r_while | floop | call_void;
 
 
-func: type_meth 'meth' ID '(' {compi.open_parens()} func_t;
+func: type_meth 'meth' ID {compi.add_method($type_meth.text, $ID.text)} '(' {compi.open_parens()} func_t;
 func_t: param func_k | func_k;
 func_k: ')' {compi.close_parens()} ';' func_p;
-func_p: var_dec block | block;
+func_p: var_dec block {compi.process_method()} | block {compi.process_method()};
 
 param: var_type ID param_t | custom_type ID param_t;
 param_t: ',' param | ;
@@ -93,7 +93,7 @@ cond_t: 'else' {compi.else_condition()} block | ;
 
 r_while: 'while' {compi.while_condition()} '(' {compi.open_parens()} super_exp ')' {compi.close_parens(); compi.while_expression()} 'do' block {compi.while_end()};
 
-floop: 'floop' var 'to' super_exp {compi.floop()} 'do' block {compi.floop_end()};
+floop: 'floop' var 'to' {compi.floop_start()} super_exp {compi.floop()} 'do' block {compi.floop_end()};
 
 super_exp: expression super_exp_t;
 super_exp_t: 'and' super_exp | 'or' super_exp | ;

@@ -12,3 +12,6 @@ Se implementaron los cuádruplos para la generación de código y se realizaron 
 
 Avance 4:
 Se implementaron las funciones necesarias para la generación de código para los estatutos condicionales y cíclicos (while y for loop). También se hizo una reestructuración del código del cubo semántico de operaciones, para optimizar el tiempo y mejorar la implementación.
+
+Avance 5:
+Se realizó una primer iteración para la generación de código de funciones, con probables correcciones necesarias en el siguiente avance. Además se hizo una revisión del código para el ciclo tipo For loop.

@@ -11,6 +11,7 @@ class Method:
     # Dictionary of variables, the keys are strings with the possible types, 
     # values are dictionaries for the variables of corresponding type
     m_vars: Dict[str, Any] = attr.ib(attr.Factory(dict))
+    m_start: int = attr.ib(0)
 
 @attrs.s
 class Var:
@@ -57,6 +58,29 @@ def add_method(self, method_type, method_id):
     else:
         self.method_stack.append(method_id)
         self.meth_dir[method_id] = Method(method_type, {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}})
+        self.quad_queue.put(Quadruple("GOTO"))
+        self.gotos.append(len(self.quad_queue) - 1)
+        self.meth_dir[method_id].m_start = len(self.quad_queue)
+
+def process_method(self):
+    method_id = self.method_stack[-1]
+    if meth_dir[method_id].m_type != 'void':
+        result = self.operand_stack.pop()
+        self.quad_queue.put(Quadruple("RETURN", result))
+    quad_index = self.gotos.pop()
+    exit_quad = self.quad_queue[quad_index]
+
+    self.quad_queue.put(Quadruple("GOTO"))
+    self.gotos.append(len(self.quad_queue) - 1)
+
+    exit_quad.ans = len(self.quad_queue)
+    
+    self.quad_queue.append(Quadruple("ENDMETH"))
+    goto_index = self.gotos.pop()
+    self.quad_queue[goto_index].ans = len(self.quad_queue)
+    self.method_stack.pop()
+    self.temp = 0
+    
 
 def add_param(self, param_type, param_id):
     method_id = self.method_stack[-1]
@@ -246,24 +270,18 @@ def while_end(self):
     self.quad_queue.put("GOTO", rtn)
     self.fill(end, len(self.quad_queue))
 
+def floop_start(self):
+    # We add the position of the next quadruple to the goto stack to know where to return later on
+    self.gotos.append(len(self.quad_queue))
+
 def floop(self):
     exp_type = self.type_stack.pop()
-    var_type = self.type_stack.pop()
-    if (var_type != 'int'):
-        raise Exception("Unexpected type for floop loop var")
-    elif (exp_type != 'int'):
+   
+    if (exp_type != 'int'):
         raise Exception("Unexpected type for floop loop expression")
     else:
         exp = self.operand_stack.pop()
-        var = self.operand_stack.pop()
-        result_type = operation_result_type('<=', var_type, exp_type)
-
-        method = self.method_stack[-1]
-        res_compare = Operand(f't{self.temp}', method == 'global')
-        self.quad_queue.put(Quadruple("FLOOP", var, exp, res_compare))
-        self.temp = self.temp + 1
-        
-        self.quad_queue.put(Quadruple("GOTOFALSE", res_compare))
+        self.quad_queue.put(Quadruple("GOTOFALSE", exp))
         self.gotos.append(len(self.quad_queue - 1))
 
 def floop_end(self):
