@@ -1,4 +1,4 @@
-# Entregable 3: Cubo aritmetico de operaciones
+# Entregable 3: Cubo semántico de operaciones
 
 INT = "int"
 FLOAT = "float"
@@ -7,386 +7,293 @@ STRING = "string"
 ANY = "any"
 TYPE_ERROR = "Undefined operator {} for types {} and {}"
 
-def operation_result_type(oper, left_type, right_type):
-    if oper == "+":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT
-            if right_type == STRING:
-                return STRING
-        if left_type == STRING:
-            if right_type == CHAR:
-                return STRING
-            if right_type == STRING:
-                return STRING
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "-":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT 
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "*":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT 
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "/":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return INT 
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == ">":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "<":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return CHAR
-            if right_type == FLOAT:
-                return CHAR
-            if right_type == CHAR:
-                return CHAR
-        if left_type == STRING:
-            if right_type == CHAR:
-                return STRING
-            if right_type == STRING:
-                return STRING
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == ">=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "<=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "==":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "!=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == CHAR:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == STRING:
-            if right_type == STRING:
-                return INT
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "+=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return CHAR
-            if right_type == FLOAT:
-                return CHAR
-            if right_type == CHAR:
-                return CHAR
-        if left_type == STRING:
-            if right_type == CHAR:
-                return STRING
-            if right_type == STRING:
-                return STRING
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "-=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return CHAR
-            if right_type == FLOAT:
-                return CHAR
-            if right_type == CHAR:
-                return CHAR
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "*=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return CHAR
-            if right_type == FLOAT:
-                return CHAR
-            if right_type == CHAR:
-                return CHAR
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    elif oper == "/=":
-        if left_type == INT:
-            if right_type == INT:
-                return INT
-            if right_type == FLOAT:
-                return INT
-            if right_type == CHAR:
-                return INT
-        if left_type == FLOAT:
-            if right_type == INT:
-                return FLOAT
-            if right_type == FLOAT:
-                return FLOAT
-            if right_type == CHAR:
-                return FLOAT
-        if left_type == CHAR:
-            if right_type == INT:
-                return CHAR
-            if right_type == FLOAT:
-                return CHAR
-            if right_type == CHAR:
-                return CHAR
-        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
-    else:
+semanticCube = {
+    INT:{
+        INT: {
+            '+':INT,
+            '-': INT,
+            '*': INT,
+            '/': INT,
+            '>': INT,
+            '<': INT,
+            '=': INT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': INT,
+            '-=': INT,
+            '*=': INT,
+            '/=': INT
+        },
+        FLOAT: {
+            '+': FLOAT,
+            '-': FLOAT,
+            '*': FLOAT,
+            '/': FLOAT,
+            '>': INT,
+            '<': INT,
+            '=': INT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': INT,
+            '-=': INT,
+            '*=': INT,
+            '/=': INT,
+        },
+        CHAR: {
+            '+':INT,
+            '-': INT,
+            '*': INT,
+            '/': INT,
+            '>': INT,
+            '<': INT,
+            '=': INT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': INT,
+            '-=': INT,
+            '*=': INT,
+            '/=': INT
+        },
+        STRING: {
+            '+':TYPE_ERROR,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': TYPE_ERROR,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': TYPE_ERROR,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        }
+    },
+    FLOAT: {
+        INT: {
+            '+':FLOAT,
+            '-': FLOAT,
+            '*': FLOAT,
+            '/': FLOAT,
+            '>': INT,
+            '<': INT,
+            '=': FLOAT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': FLOAT,
+            '-=': FLOAT,
+            '*=': FLOAT,
+            '/=': FLOAT
+        },
+        FLOAT: {
+            '+':FLOAT,
+            '-': FLOAT,
+            '*': FLOAT,
+            '/': FLOAT,
+            '>': INT,
+            '<': INT,
+            '=': FLOAT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': FLOAT,
+            '-=': FLOAT,
+            '*=': FLOAT,
+            '/=': FLOAT
+        },
+        CHAR: {
+            '+':FLOAT,
+            '-': FLOAT,
+            '*': FLOAT,
+            '/': FLOAT,
+            '>': INT,
+            '<': INT,
+            '=': FLOAT,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': FLOAT,
+            '-=': FLOAT,
+            '*=': FLOAT,
+            '/=': FLOAT
+        },
+        STRING: {
+            '+':TYPE_ERROR,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': TYPE_ERROR,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': TYPE_ERROR,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        }
+    },
+    CHAR: {
+         INT: {
+            '+':INT,
+            '-': INT,
+            '*': INT,
+            '/': INT,
+            '>': INT,
+            '<': INT,
+            '=': CHAR,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': CHAR,
+            '-=': CHAR,
+            '*=': CHAR,
+            '/=': CHAR
+        },
+        FLOAT: {
+            '+':FLOAT,
+            '-': FLOAT,
+            '*': FLOAT,
+            '/': FLOAT,
+            '>': INT,
+            '<': INT,
+            '=': CHAR,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': CHAR,
+            '-=': CHAR,
+            '*=': CHAR,
+            '/=': CHAR
+        },
+        CHAR: {
+            '+':INT,
+            '-': INT,
+            '*': INT,
+            '/': INT,
+            '>': INT,
+            '<': INT,
+            '=': CHAR,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': CHAR,
+            '-=': CHAR,
+            '*=': CHAR,
+            '/=': CHAR
+        },
+        STRING: {
+            '+': STRING,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': TYPE_ERROR,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': TYPE_ERROR,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        }
+    },
+    STRING: {
+        INT: {
+            '+': TYPE_ERROR,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': TYPE_ERROR,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': TYPE_ERROR,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        },
+         FLOAT: {
+            '+': TYPE_ERROR,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': TYPE_ERROR,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': TYPE_ERROR,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        },
+         CHAR: {
+            '+': STRING,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': TYPE_ERROR,
+            '<': TYPE_ERROR,
+            '=': STRING,
+            '<=': TYPE_ERROR,
+            '>=': TYPE_ERROR,
+            '==': TYPE_ERROR,
+            '!=': TYPE_ERROR,
+            '+=': STRING,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        },
+         STRING: {
+            '+': STRING,
+            '-': TYPE_ERROR,
+            '*': TYPE_ERROR,
+            '/': TYPE_ERROR,
+            '>': INT,
+            '<': INT,
+            '=': STRING,
+            '<=': INT,
+            '>=': INT,
+            '==': INT,
+            '!=': INT,
+            '+=': STRING,
+            '-=': TYPE_ERROR,
+            '*=': TYPE_ERROR,
+            '/=': TYPE_ERROR
+        }
+    }
+
+}
+
+def operation_result_type(left_type, right_type, oper):
+    if not left_type in semanticCube or not right_type in semanticCube[left_type] or not oper in semanticCube[left_type][right_type]:
         raise ValueError("{} does not exist".format(oper))
+    elif semanticCube[left_type][right_type][oper] == TYPE_ERROR:
+        raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
+    return(semanticCube[left_type][right_type][oper])
