@@ -1,4 +1,5 @@
 # Bloon Programming Language
+
 Compiler Design Class Project
 
 Avance 1:
@@ -15,3 +16,6 @@ Se implementaron las funciones necesarias para la generación de código para lo
 
 Avance 5:
 Se realizó una primer iteración para la generación de código de funciones, con probables correcciones necesarias en el siguiente avance. Además se hizo una revisión del código para el ciclo tipo For loop.
+
+Avance 6:
+Se corrigieron y completaron aspectos de la generación de código de declaración y llamada a funciones, se hicieron correcciones en el ciclo tipo For, se inició a implementar aspectos del mapa de memoria.
