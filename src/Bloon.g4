@@ -1,8 +1,12 @@
 grammar Bloon;
 
 @header {
-    from BloonCompiler import Compiler
-    compi = Compiler()
+from BloonCompiler import Compiler
+compi = Compiler()
+quad_queue = None
+meth_dir = None
+type_dir = None
+constants = None
 }
 
 /*
@@ -19,7 +23,7 @@ WHITESPACE: [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
  * Parser Rules
  */
 
-program: 'program' ID ';' program_t;
+program: 'program' ID ';' program_t {compi.save_state(self)} EOF;
 program_t: r_class program_t | var_dec program_t | func program_t | main;
 
 main: 'main' '(' {compi.open_parens()} ')' {compi.close_parens()} block;
@@ -67,8 +71,8 @@ func_p: var_dec block {compi.process_method()} | block {compi.process_method()};
 param: 
         var_type ID {compi.define_param($var_type.text, $ID.text)} param_t 
         | var_type ID p_dim {compi.define_param($var_type.text, $ID.text, $p_dim.text)} param_t
-        | custom_type ID {compi.define_param($var_type.text, $ID.text)} param_t
-        | custom_type ID p_dim {compi.define_param($var_type.text, $ID.text, $p_dim.text)} param_t;
+        | custom_type ID {compi.define_param($custom_type.text, $ID.text)} param_t
+        | custom_type ID p_dim {compi.define_param($custom_type.text, $ID.text, $p_dim.text)} param_t;
 param_t: ',' param | ;
 p_dim: 'arr' | 'mat';
 
@@ -96,17 +100,23 @@ r_while: 'while' {compi.while_condition()} '(' {compi.open_parens()} super_exp '
 
 floop: 'floop' var 'to' super_exp {compi.floop()} 'do' {compi.floop_check()} block {compi.floop_end()};
 
-super_exp: expression super_exp_t;
+super_exp: '!' expression super_exp_t | expression super_exp_t;
 super_exp_t: 'and' super_exp | 'or' super_exp | ;
 
-expression: '!' exp expression_t | exp expression_t {compi.arithmetic_operation()};
-expression_t: '>' {compi.add_op('>')} exp | '<' {compi.add_op('<')} exp | '<=' {compi.add_op('<=')} exp | '>=' {compi.add_op('>=')} exp | '==' {compi.add_op('==')} exp | '!=' {compi.add_op('!=')} exp | ;
+expression: exp (
+                    (
+                        '>' {compi.add_op('>')}
+                        | '<' {compi.add_op('<')}
+                        | '>=' {compi.add_op('>=')}
+                        | '<=' {compi.add_op('<=')}
+                        | '==' {compi.add_op('==')}
+                        | '!=' {compi.add_op('!=')}
+                    ) exp {compi.arithmetic_operation()}
+                )*;
 
-exp: term exp_t {compi.arithmetic_operation()};
-exp_t: '+' {compi.add_op('+')} exp | '-' {compi.add_op('-')} exp | ;
+exp: term (('+' {compi.add_op('+')} | '-' {compi.add_op('-')}) term {compi.arithmetic_operation()})*;
 
-term: factor term_t {compi.arithmetic_operation()};
-term_t: '*' {compi.add_op('*')} term | '/' {compi.add_op('/')} term | ;
+term: factor (('*' {compi.add_op('*')} | '/' {compi.add_op('/')} | '%' {compi.add_op('%')}) factor {compi.arithmetic_operation()})*;
 
 factor: '(' {compi.open_parens()} expression ')' {compi.close_parens()} | var_const | call | factor_t;
 factor_t: '+' var_const | '-' var_const;

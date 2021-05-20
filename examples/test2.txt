@@ -1,0 +1,35 @@
+program Team_pp;
+
+vars
+    i, j, p : int;
+
+int meth fact (int j);
+vars i : int;
+{
+    i = j + (p - j*2+j);
+    cond (j == 1) then {
+        return (j);
+    }
+    else {
+        return(j * fact(j-1));
+    }
+}
+
+void meth pelos (int y);
+vars x: int;
+{
+    x = y;
+    while (x < 10) do {
+        x = x+1;
+    }
+}
+
+main (){
+    read(p) ; j = p * 2;
+    i = fact(p);
+    pelos(p);
+    i = 1;
+    floop i to 10 do {
+        write("HelloWorld");
+    }
+}

@@ -5,8 +5,12 @@ if __name__ is not None and "." in __name__:
 else:
     from BloonParser import BloonParser
 
-    from BloonCompiler import Compiler
-    compi = Compiler()
+from BloonCompiler import Compiler
+compi = Compiler()
+quad_queue = None
+meth_dir = None
+type_dir = None
+constants = None
 
 
 # This class defines a complete listener for a parse tree produced by BloonParser.
@@ -300,6 +304,15 @@ class BloonListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BloonParser#p_dim.
+    def enterP_dim(self, ctx:BloonParser.P_dimContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#p_dim.
+    def exitP_dim(self, ctx:BloonParser.P_dimContext):
+        pass
+
+
     # Enter a parse tree produced by BloonParser#block.
     def enterBlock(self, ctx:BloonParser.BlockContext):
         pass
@@ -333,33 +346,6 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#call.
     def exitCall(self, ctx:BloonParser.CallContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#call_t.
-    def enterCall_t(self, ctx:BloonParser.Call_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#call_t.
-    def exitCall_t(self, ctx:BloonParser.Call_tContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#call_args.
-    def enterCall_args(self, ctx:BloonParser.Call_argsContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#call_args.
-    def exitCall_args(self, ctx:BloonParser.Call_argsContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#call_args_t.
-    def enterCall_args_t(self, ctx:BloonParser.Call_args_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#call_args_t.
-    def exitCall_args_t(self, ctx:BloonParser.Call_args_tContext):
         pass
 
 
@@ -489,15 +475,6 @@ class BloonListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BloonParser#expression_t.
-    def enterExpression_t(self, ctx:BloonParser.Expression_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#expression_t.
-    def exitExpression_t(self, ctx:BloonParser.Expression_tContext):
-        pass
-
-
     # Enter a parse tree produced by BloonParser#exp.
     def enterExp(self, ctx:BloonParser.ExpContext):
         pass
@@ -507,30 +484,12 @@ class BloonListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BloonParser#exp_t.
-    def enterExp_t(self, ctx:BloonParser.Exp_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#exp_t.
-    def exitExp_t(self, ctx:BloonParser.Exp_tContext):
-        pass
-
-
     # Enter a parse tree produced by BloonParser#term.
     def enterTerm(self, ctx:BloonParser.TermContext):
         pass
 
     # Exit a parse tree produced by BloonParser#term.
     def exitTerm(self, ctx:BloonParser.TermContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#term_t.
-    def enterTerm_t(self, ctx:BloonParser.Term_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#term_t.
-    def exitTerm_t(self, ctx:BloonParser.Term_tContext):
         pass
 
 

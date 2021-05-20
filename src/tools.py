@@ -292,8 +292,13 @@ semanticCube = {
 }
 
 def operation_result_type(left_type, right_type, oper):
-    if not left_type in semanticCube or not right_type in semanticCube[left_type] or not oper in semanticCube[left_type][right_type]:
-        raise ValueError("{} does not exist".format(oper))
-    elif semanticCube[left_type][right_type][oper] == TYPE_ERROR:
+    if not left_type in semanticCube:
+        raise ValueError("{} does not exist".format(left_type))
+    elif not right_type in semanticCube[left_type]:
+        raise ValueError("{} does not exist".format(right_type))
+    elif not oper in semanticCube[left_type][right_type]:
+        raise ValueError("{} does not exist for {} and {}".format(oper, left_type, right_type))
+
+    if semanticCube[left_type][right_type][oper] == TYPE_ERROR:
         raise TypeError(TYPE_ERROR.format(oper, left_type, right_type))
     return(semanticCube[left_type][right_type][oper])
