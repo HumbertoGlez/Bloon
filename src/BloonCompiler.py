@@ -63,10 +63,11 @@ class Compiler:
     operator_stack = deque()
     operand_stack = deque()
     # type_stack = deque()
-    quad_queue = []
+    # initialize quad queue with go to main, later to be filled
+    quad_queue = [Quadruple("GOTO")]
+    gotos = []
     newVar_count = 0
     constants = {'int': {}, 'float': {}, 'string': {}, 'char': {}}
-    gotos = []
 
     def define_method(self, method_type, method_id):
         if  method_id in self.meth_dir:
@@ -82,7 +83,6 @@ class Compiler:
         # if method.m_type != 'void':
         #     result = self.operand_stack.pop()
         #     self.quad_queue.append(Quadruple("RETURN", result))
-        print("Generate ENDMETH")
         self.quad_queue.append(Quadruple("ENDMETH"))
         self.method_stack.pop()
         
@@ -135,7 +135,6 @@ class Compiler:
         left_type = left_op.op_type
         op_type = operation_result_type(left_type, res_type, '=')
         isGlobal = self.method_stack[-1] == 'global'
-        print("Generate ASSIGN")
         self.quad_queue.append(Quadruple('ASSIGN', res, None, left_op))
 
     def arithmetic_assign(self, op):
@@ -151,7 +150,6 @@ class Compiler:
             # res_oper = Operand(f't{self.temp}', method == 'global')
             # self.operand_stack.append(res_oper)
             # self.type_stack.append(result_type)
-            print("Generate", op)
             self.quad_queue.append(Quadruple(op, left_oper, right_oper, left_oper))
             # self.temp = self.temp + 1
             # self.assign_var()
@@ -199,7 +197,6 @@ class Compiler:
         address = method.get_address(result_type)
         res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
         self.operand_stack.append(res_op)
-        print("Generate", oper)
         self.quad_queue.append(Quadruple(oper, left_op, right_op, res_op))
         method.m_temp += 1
 
@@ -227,6 +224,7 @@ class Compiler:
         dir = self.get_var_dir(const_type, isGlobal=True)
         method = self.meth_dir['global']
         address = method.get_address(const_type)
+        val = val.strip('"')
         dir[val] = Var(address, True)
         self.constants[const_type][address] = val
         return address
@@ -238,6 +236,9 @@ class Compiler:
         else:
             address = dir[const_id].address        
         self.operand_stack.append(Operand(const_id, const_type, address, True))
+    
+    def new_write(self):
+        self.quad_queue.append(Quadruple("NEWLINE"))
 
     def verify_method(self, id):
         if id not in self.meth_dir:
@@ -247,14 +248,11 @@ class Compiler:
         method = self.meth_dir[id]
         if id == 'read':
             variable = self.operand_stack.pop()
-            print("Generate READ")
             self.quad_queue.append(Quadruple("READ", None, None, variable))
         elif id == 'write':
             res = self.operand_stack.pop()
-            print("Generate WRITE")
             self.quad_queue.append(Quadruple("WRITE", None, None, res))
         else:
-            print("Generate ERA")
             self.quad_queue.append(Quadruple("ERA", ans=id))
             method_id = self.method_stack[-1]
             method_type = method.m_type
@@ -263,7 +261,6 @@ class Compiler:
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
                 if argument.op_type == method.m_param_types[i]:
-                    print("Generate PARAM")
                     self.quad_queue.append(Quadruple("PARAM", None, None, argument))
                 else:
                     raise Exception(f"Invalid argument at method {id} call")
@@ -275,7 +272,6 @@ class Compiler:
                 self.operand_stack.append(rtn_op)
                 self.meth_dir[method_id].m_temp += 1
             # GOSUB with the initial address of the method, and the address of the temp to store the return value if not void
-            print("Generate GOSUB")
             self.quad_queue.append(Quadruple("GOSUB", id, address, method.m_start))
 
     def fill(self, quad_idx, cont):
@@ -286,7 +282,6 @@ class Compiler:
         if (result.op_type != 'int'):
             raise Exception("Unexpected type for condition")
         else:
-            print("Generate GOTOFALSE")
             self.quad_queue.append(Quadruple("GOTOFALSE", result))
             self.gotos.append(len(self.quad_queue) - 1)
 
@@ -295,11 +290,10 @@ class Compiler:
         self.fill(end, len(self.quad_queue))
 
     def else_condition(self):
-        print("Generate GOTO")
         self.quad_queue.append(Quadruple("GOTO"))
         false = self.gotos.pop()
         self.gotos.append(len(self.quad_queue) - 1)
-        self.fill(false, len(self.quad_queue) - 1)
+        self.fill(false, len(self.quad_queue))
 
     def while_condition(self):
         self.gotos.append(len(self.quad_queue))
@@ -309,14 +303,13 @@ class Compiler:
         if(result.op_type != 'int'):
             raise Exception("Unexpected type for condition")
         else:
-            print("Generate GOTOFALSE")
             self.quad_queue.append(Quadruple("GOTOFALSE", result))
             self.gotos.append(len(self.quad_queue) - 1)
 
     def while_end(self):
         end = self.gotos.pop()
         rtn = self.gotos.pop()
-        self.quad_queue.append(Quadruple("GOTO", rtn))
+        self.quad_queue.append(Quadruple("GOTO", ans=rtn))
         self.fill(end, len(self.quad_queue))
 
     def floop(self):
@@ -333,7 +326,6 @@ class Compiler:
             res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
 
             self.operand_stack.append(res_op)
-            print("Generate <=")
             self.quad_queue.append(Quadruple('<=', var, exp, res_op))
             method.m_temp += 1
             # Set goto for the quadruple where the loop condition is done
@@ -341,7 +333,6 @@ class Compiler:
 
     def floop_check(self):
         compare_res = self.operand_stack.pop()
-        print("Generate GOTOFALSE")
         self.quad_queue.append(Quadruple("GOTOFALSE", compare_res))
         # Set goto for the quadruple to later on fill it
         self.gotos.append(len(self.quad_queue) - 1)
@@ -350,12 +341,16 @@ class Compiler:
         false_quad = self.gotos.pop()
         compare_quad = self.gotos.pop()
         var = self.operand_stack[-1]
-        # IMPORTANT, special quadruple to add 1 to the given operand
-        print("Generate quadruple to increase floop var")
+        # special quadruple to add 1 to the given operand
         self.quad_queue.append(Quadruple("+_1", var, None, var))
-        print("Generate GOTO")
-        self.quad_queue.append(Quadruple("GOTO", compare_quad))
+        self.quad_queue.append(Quadruple("GOTO", ans=compare_quad))
         self.fill(false_quad, len(self.quad_queue))
+    
+    def main_method(self):
+        self.meth_dir['main'].m_start = len(self.quad_queue)
+        # My gotoMain will always be my first quadruple
+        gotoMain = 0
+        self.fill(gotoMain, self.meth_dir['main'].m_start)
 
     def save_state(self, parser):
         parser.quad_queue = self.quad_queue

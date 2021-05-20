@@ -1,0 +1,10 @@
+program addTwo;
+
+vars
+    first, second, sum : int;
+
+main () {
+    read(first, second);
+    sum = first + second;
+    write(first, " + ", second, " = ", sum);
+}

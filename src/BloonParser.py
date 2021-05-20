@@ -627,7 +627,7 @@ class BloonParser ( Parser ):
             compi.open_parens()
             self.state = 134
             self.match(BloonParser.T__4)
-            compi.close_parens()
+            compi.close_parens(); compi.main_method()
             self.state = 136
             self.block()
         except RecognitionException as re:
@@ -3069,7 +3069,7 @@ class BloonParser ( Parser ):
                 self.enterOuterAlt(localctx, 2)
                 self.state = 414
                 self.match(BloonParser.T__4)
-                compi.close_parens()
+                compi.close_parens(); compi.new_write()
                 self.state = 416
                 self.match(BloonParser.T__1)
                 pass

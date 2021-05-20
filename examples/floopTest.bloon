@@ -1,0 +1,11 @@
+program Team_pp;
+
+vars
+    i : int;
+
+main (){
+    i = 1;
+    floop i to 10 do {
+        write("HelloWorld");
+    }
+}

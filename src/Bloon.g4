@@ -26,7 +26,7 @@ WHITESPACE: [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 program: 'program' ID ';' program_t {compi.save_state(self)} EOF;
 program_t: r_class program_t | var_dec program_t | func program_t | main;
 
-main: 'main' '(' {compi.open_parens()} ')' {compi.close_parens()} block;
+main: 'main' '(' {compi.open_parens()} ')' {compi.close_parens(); compi.main_method()} block;
 
 r_class: 'class' ID class_t;
 class_t: '<' 'inherits' ID '>' class_k | class_k;
@@ -91,7 +91,7 @@ read_k: ',' read_t | ')' {compi.close_parens()} ';';
 
 write: 'write' '(' {compi.open_parens()} write_t;
 write_t: super_exp {compi.call_method('write')} write_k | CONST_STR {compi.get_const($CONST_STR.text, "string"); compi.call_method('write')} write_k | call write_k;
-write_k: ',' write_t | ')' {compi.close_parens()} ';'; 
+write_k: ',' write_t | ')' {compi.close_parens(); compi.new_write()} ';'; 
 
 cond: 'cond' '(' {compi.open_parens()} super_exp ')' {compi.close_parens(); compi.condition()} 'then' block cond_t {compi.end_condition()};
 cond_t: 'else' {compi.else_condition()} block | ;

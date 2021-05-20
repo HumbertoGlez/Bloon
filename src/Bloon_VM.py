@@ -27,6 +27,8 @@ class VirtualMachine():
                     value = int(value)
                 elif const_type == 'float':
                     value = float(value)
+                elif const_type == 'string':
+                    value = str(value)
                 self.register_value(address, value, const_type, True)
     
     def register_value(self, address, value, v_type, isglobal=False):
@@ -65,7 +67,7 @@ class VirtualMachine():
     
     def write(self, operand):
         value = self.get_value(operand.op_addr, operand.op_type, operand.isGlobal)
-        print("WRITE:", value)
+        print(value, end ="")
 
     def read(self, operand):
         value = input("Enter value to read: ")
@@ -132,8 +134,19 @@ class VirtualMachine():
                 self.register_value(result.op_addr, value, result.op_type, result.isGlobal)
             elif quad.operator == 'WRITE':
                 self.write(quad.ans)
+            elif quad.operator == 'NEWLINE':
+                print()
             elif quad.operator == 'READ':
                 self.read(quad.ans)
+            elif quad.operator == 'GOTO':
+                q = quad.ans
+                continue
+            elif quad.operator == 'GOTOFALSE':
+                value_op = quad.left_op
+                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal)
+                if value == False:
+                    q = quad.ans
+                    continue
             elif quad.operator == '+':
                 self.do_operation('add', quad) 
             elif quad.operator == '-':
@@ -153,4 +166,11 @@ class VirtualMachine():
             elif quad.operator == '==':
                 self.do_operation('eq', quad) 
             elif quad.operator == '!=':
-                self.do_operation('ne', quad) 
+                self.do_operation('ne', quad)
+            elif quad.operator == '+_1':
+                value_op = quad.left_op
+                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal)
+                value += 1
+                ans_op = quad.ans
+                self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal)
+            q += 1
