@@ -79,7 +79,7 @@ p_dim: 'arr' | 'mat';
 block: '{' block_t;
 block_t: statement block_t | statement '}' | '}';
 
-r_return: 'return' '(' {compi.open_parens()} super_exp ')' {compi.close_parens()} ';';
+r_return: 'return' '(' {compi.open_parens()} super_exp ')' {compi.close_parens(); compi.rtn_stmt()} ';';
 
 call: ID {compi.verify_method($ID.text)}'(' {compi.open_parens()} super_exp? ( ',' super_exp )* ')' {compi.close_parens(); compi.call_method($ID.text)};
 
@@ -111,12 +111,12 @@ expression: exp (
                         | '<=' {compi.add_op('<=')}
                         | '==' {compi.add_op('==')}
                         | '!=' {compi.add_op('!=')}
-                    ) exp {compi.arithmetic_operation()}
+                    ) exp {compi.arithmetic_operation('>', '<', '>=', '<=', '==', '!=')}
                 )*;
 
-exp: term (('+' {compi.add_op('+')} | '-' {compi.add_op('-')}) term {compi.arithmetic_operation()})*;
+exp: term (('+' {compi.add_op('+')} | '-' {compi.add_op('-')}) term {compi.arithmetic_operation('+', '-')})*;
 
-term: factor (('*' {compi.add_op('*')} | '/' {compi.add_op('/')} | '%' {compi.add_op('%')}) factor {compi.arithmetic_operation()})*;
+term: factor (('*' {compi.add_op('*')} | '/' {compi.add_op('/')} | '%' {compi.add_op('%')}) factor {compi.arithmetic_operation('*', '/', '%')})*;
 
 factor: '(' {compi.open_parens()} expression ')' {compi.close_parens()} | var_const | call | factor_t;
 factor_t: '+' var_const | '-' var_const;

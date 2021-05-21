@@ -19,3 +19,6 @@ Se realizó una primer iteración para la generación de código de funciones, c
 
 Avance 6:
 Se corrigieron y completaron aspectos de la generación de código de declaración y llamada a funciones, se hicieron correcciones en el ciclo tipo For, se inició a implementar aspectos del mapa de memoria.
+
+Avance 7:
+Se realizó la implementación de la maquina virtual con ejecución de operaciones, estatutos lineales y funciones.

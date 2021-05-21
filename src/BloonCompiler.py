@@ -15,6 +15,7 @@ class Method:
     # CHECK PARAM TABLE stuff, some thing might not be needed
     m_param_count: int = attr.ib(0)
     m_vars_counts: Dict[str, int] = attr.ib(attr.Factory(dict))
+    m_param_addrs: List[int] = attr.ib(attr.Factory(list))
     m_param_types: List[str] = attr.ib(attr.Factory(list))
     m_start: int = attr.ib(0)
     m_temp: int = attr.ib(0)
@@ -98,6 +99,7 @@ class Compiler:
         method.m_vars[param_type][param_id] = Var(address, False, dimensions)
         method.m_param_count += 1
         method.m_param_types.append(param_type)
+        method.m_param_addrs.append(address)
 
     def get_var_dir(self, var_type, isGlobal=False):
         method_id =  "global" if isGlobal else self.method_stack[-1]
@@ -184,21 +186,22 @@ class Compiler:
                 raise Exception(f'{id} was not defined.')
 
 
-    def arithmetic_operation(self):
-        right_op = self.operand_stack.pop()
-        right_type = right_op.op_type
-        left_op = self.operand_stack.pop()
-        left_type = left_op.op_type
-        oper = self.operator_stack.pop()
-        result_type = operation_result_type(left_type, right_type, oper)
-    
-        method_id = self.method_stack[-1]
-        method = self.meth_dir[method_id]
-        address = method.get_address(result_type)
-        res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
-        self.operand_stack.append(res_op)
-        self.quad_queue.append(Quadruple(oper, left_op, right_op, res_op))
-        method.m_temp += 1
+    def arithmetic_operation(self, *ops):
+        if self.operator_stack[-1] in ops:
+            right_op = self.operand_stack.pop()
+            right_type = right_op.op_type
+            left_op = self.operand_stack.pop()
+            left_type = left_op.op_type
+            oper = self.operator_stack.pop()
+            result_type = operation_result_type(left_type, right_type, oper)
+        
+            method_id = self.method_stack[-1]
+            method = self.meth_dir[method_id]
+            address = method.get_address(result_type)
+            res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
+            self.operand_stack.append(res_op)
+            self.quad_queue.append(Quadruple(oper, left_op, right_op, res_op))
+            method.m_temp += 1
 
     def increase_varCount(self):
         self.newVar_count = self.newVar_count + 1
@@ -239,6 +242,10 @@ class Compiler:
     
     def new_write(self):
         self.quad_queue.append(Quadruple("NEWLINE"))
+    
+    def rtn_stmt(self):
+        rtn_op = self.operand_stack.pop()
+        self.quad_queue.append(Quadruple("RETURN", None, None, rtn_op))
 
     def verify_method(self, id):
         if id not in self.meth_dir:
@@ -253,10 +260,6 @@ class Compiler:
             res = self.operand_stack.pop()
             self.quad_queue.append(Quadruple("WRITE", None, None, res))
         else:
-            self.quad_queue.append(Quadruple("ERA", ans=id))
-            method_id = self.method_stack[-1]
-            method_type = method.m_type
-            address = None
             # Use method signature to pass arguments to parameters
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
@@ -264,6 +267,10 @@ class Compiler:
                     self.quad_queue.append(Quadruple("PARAM", None, None, argument))
                 else:
                     raise Exception(f"Invalid argument at method {id} call")
+            self.quad_queue.append(Quadruple("ERA", ans=id))
+            method_id = self.method_stack[-1]
+            method_type = method.m_type
+            address = None
             # Create temp for return value if not void
             if method_type != 'void':
                 address = self.meth_dir[method_id].get_address(method_type)

@@ -1,0 +1,10 @@
+program rtnMethodTest;
+
+int meth myFunction(int x); 
+{
+    return (5+x*2);
+}
+
+main() {
+    write("The return value is: ", myFunction(3));
+}

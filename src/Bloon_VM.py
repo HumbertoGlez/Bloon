@@ -9,6 +9,8 @@ class VirtualMachine():
     mem = [None]*10000
     mem_stack = [mem]
     call_stack = []
+    arguments = []
+    param_refs = []
     INT_START = 0
     FLOAT_START = 250
     CHAR_START = 500
@@ -65,6 +67,22 @@ class VirtualMachine():
         elif v_type == 'custom':
             return curr_memory[self.UNSPECIFIED + address]
     
+    def era(self, m_id):
+        new_mem = [None]*10000
+        t_mem = []
+        self.param_refs = self.meth_dir[m_id].m_param_addrs
+        for i, arg in enumerate(self.arguments):
+            p_local_address = self.param_refs[i]
+            p_value = self.get_value(arg.op_addr, arg.op_type)
+            t_mem = self.mem
+            self.mem = new_mem
+            self.register_value(p_local_address, p_value, arg.op_type)
+            self.mem = t_mem
+        self.mem_stack.append(new_mem)
+        self.mem = new_mem
+        self.arguments = []
+        self.param_refs = []
+
     def write(self, operand):
         value = self.get_value(operand.op_addr, operand.op_type, operand.isGlobal)
         print(value, end ="")
@@ -87,8 +105,27 @@ class VirtualMachine():
         else:
             self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal)
 
+    def rtn_stmt(self, res):
+        val = self.get_value(res.op_addr, res.op_type, res.isGlobal)
+        if val is None:
+            return
+        goSub = self.call_stack[-1] - 1
+        r_addr = self.quad_queue[goSub].right_op
+        curr_memory = self.mem_stack[-2]
+        if res.op_type == 'int':
+            curr_memory[self.INT_START + r_addr] = int(val)
+        elif res.op_type == 'float':
+            curr_memory[self.FLOAT_START + r_addr] = float(val)
+        elif res.op_type == 'char':
+            curr_memory[self.CHAR_START + r_addr] = val
+        elif res.op_type == 'string':
+            curr_memory[self.STRING_START + r_addr] = val
+        elif res.op_type == 'any':
+            curr_memory[self.UNSPECIFIED + r_addr] = val
+
     def operation(self, op, left, right):
         # Validation was already done on the compiler
+        # CHAR OPERATIONS NEED TO BE REVISED, MODULUS NEED IMPLEMENTATION
         if op == 'add':
             return left + right
         elif op == 'sub':
@@ -147,6 +184,21 @@ class VirtualMachine():
                 if value == False:
                     q = quad.ans
                     continue
+            elif quad.operator == 'PARAM':
+                self.arguments.insert(0, quad.ans)
+            elif quad.operator == 'ERA':
+                self.era(quad.ans)
+            elif quad.operator == 'GOSUB':
+                self.call_stack.append(q + 1)
+                q = quad.ans
+                continue
+            elif quad.operator == 'RETURN':
+                self.rtn_stmt(quad.ans)
+            elif quad.operator == 'ENDMETH':
+                self.mem_stack.pop()
+                self.mem = self.mem_stack[-1]
+                q = self.call_stack.pop()
+                continue
             elif quad.operator == '+':
                 self.do_operation('add', quad) 
             elif quad.operator == '-':

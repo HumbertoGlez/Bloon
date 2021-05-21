@@ -2608,7 +2608,7 @@ class BloonParser ( Parser ):
             self.super_exp()
             self.state = 355
             self.match(BloonParser.T__4)
-            compi.close_parens()
+            compi.close_parens(); compi.rtn_stmt()
             self.state = 357
             self.match(BloonParser.T__1)
         except RecognitionException as re:
@@ -3537,7 +3537,7 @@ class BloonParser ( Parser ):
 
                 self.state = 488
                 self.exp()
-                compi.arithmetic_operation()
+                compi.arithmetic_operation('>', '<', '>=', '<=', '==', '!=')
                 self.state = 495
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
@@ -3610,7 +3610,7 @@ class BloonParser ( Parser ):
 
                 self.state = 503
                 self.term()
-                compi.arithmetic_operation()
+                compi.arithmetic_operation('+', '-')
                 self.state = 510
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
@@ -3688,7 +3688,7 @@ class BloonParser ( Parser ):
 
                 self.state = 520
                 self.factor()
-                compi.arithmetic_operation()
+                compi.arithmetic_operation('*', '/', '%')
                 self.state = 527
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
