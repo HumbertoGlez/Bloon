@@ -134,6 +134,8 @@ class VirtualMachine():
             return left * right
         elif op == 'div':
             return left / right
+        elif op == 'mod':
+            return left % right
         elif op == 'gt':
             return left > right
         elif op == 'ge':
@@ -207,6 +209,8 @@ class VirtualMachine():
                 self.do_operation('mul', quad) 
             elif quad.operator == '/':
                 self.do_operation('div', quad) 
+            elif quad.operator == '%':
+                self.do_operation('mod', quad)
             elif quad.operator == '>':
                 self.do_operation('gt', quad) 
             elif quad.operator == '>=':

@@ -1,10 +1,11 @@
 program addTwo;
 
 vars
-    first, second, sum : int;
+    mod : int;
+    first, second : float;
 
 main () {
     read(first, second);
-    sum = first + second;
-    write(first, " + ", second, " = ", sum);
+    mod = first % second;
+    write(first, " % ", second, " = ", mod);
 }
