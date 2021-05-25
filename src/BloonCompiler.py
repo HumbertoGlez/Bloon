@@ -18,8 +18,8 @@ class Method:
     m_param_addrs: List[int] = attr.ib(attr.Factory(list))
     m_param_types: List[str] = attr.ib(attr.Factory(list))
     m_start: int = attr.ib(0)
-    m_temp: int = attr.ib(0)
-
+    m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'custom': 0}
+    m_temp_count: int = attr.ib(0)
     def get_address(self, v_type):
         if v_type in self.m_vars_counts:
             self.m_vars_counts[v_type] += 1
@@ -198,10 +198,11 @@ class Compiler:
             method_id = self.method_stack[-1]
             method = self.meth_dir[method_id]
             address = method.get_address(result_type)
-            res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
+            res_op = Operand(f't{method.m_temp_count}', result_type, address, method_id == 'global')
             self.operand_stack.append(res_op)
             self.quad_queue.append(Quadruple(oper, left_op, right_op, res_op))
-            method.m_temp += 1
+            method.m_temp_count += 1
+            method.m_temps[result_type] += 1
 
     def increase_varCount(self):
         self.newVar_count = self.newVar_count + 1
@@ -261,23 +262,24 @@ class Compiler:
             self.quad_queue.append(Quadruple("WRITE", None, None, res))
         else:
             # Use method signature to pass arguments to parameters
+            self.quad_queue.append(Quadruple("ERA", ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
                 if argument.op_type == method.m_param_types[i]:
-                    self.quad_queue.append(Quadruple("PARAM", None, None, argument))
+                    self.quad_queue.append(Quadruple("PARAM", argument, None, i))
                 else:
                     raise Exception(f"Invalid argument at method {id} call")
-            self.quad_queue.append(Quadruple("ERA", ans=id))
             method_id = self.method_stack[-1]
             method_type = method.m_type
             address = None
             # Create temp for return value if not void
             if method_type != 'void':
                 address = self.meth_dir[method_id].get_address(method_type)
-                self.meth_dir[method_id].m_vars[method_type][f"t{self.meth_dir[method_id].m_temp}"] = Var(address)
-                rtn_op = Operand(f"t{self.meth_dir[method_id].m_temp}", method_type, address, method_id == 'global')
+                self.meth_dir[method_id].m_vars[method_type][f"t{self.meth_dir[method_id].m_temp_count}"] = Var(address)
+                rtn_op = Operand(f"t{self.meth_dir[method_id].m_temp_count}", method_type, address, method_id == 'global')
                 self.operand_stack.append(rtn_op)
-                self.meth_dir[method_id].m_temp += 1
+                self.meth_dir[method_id].m_temp_count += 1
+                # We dont add this temporal to the count per type because it was already added to var table
             # GOSUB with the initial address of the method, and the address of the temp to store the return value if not void
             self.quad_queue.append(Quadruple("GOSUB", id, address, method.m_start))
 
@@ -330,11 +332,12 @@ class Compiler:
             method_id = self.method_stack[-1]
             method = self.meth_dir[method_id]
             address = method.get_address(result_type)
-            res_op = Operand(f't{method.m_temp}', result_type, address, method_id == 'global')
+            res_op = Operand(f't{method.m_temp_count}', result_type, address, method_id == 'global')
 
             self.operand_stack.append(res_op)
             self.quad_queue.append(Quadruple('<=', var, exp, res_op))
-            method.m_temp += 1
+            method.m_temp_count += 1
+            method.m_temps[result_type] += 1
             # Set goto for the quadruple where the loop condition is done
             self.gotos.append(len(self.quad_queue) - 1)
 
