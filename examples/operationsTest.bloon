@@ -1,0 +1,15 @@
+program operationsTest;
+vars
+    x, y : int;
+
+main() {
+    read(x, y);
+    write(x, " + ", y, " = ", x+y);
+    write(x, " - ", y, " = ", x-y);
+    write(x, " * ", y, " = ", x*y);
+    write(x, " / ", y, " = ", x/y);
+    write(x, " % ", y, " = ", x%y);
+    write(x, " < ", y, " = ", x<y);
+    write(x, " > ", y, " = ", x>y);
+    write(x, " == ", y, " = ", x==y);
+}

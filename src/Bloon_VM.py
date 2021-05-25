@@ -120,6 +120,10 @@ class VirtualMachine():
 
         left_v = self.get_value(left.op_addr, left.op_type, left.isGlobal)
         right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal)
+        if left_v == None:
+            raise Exception(f'Undefined variable: {left.op_id}')
+        elif right_v == None:
+            raise Exception(f'Undefined variable: {right.op_id}')
 
         if op == 'add':
             if type_left_char:
@@ -448,6 +452,7 @@ class VirtualMachine():
             q += 1
         
         print("\nFinished execution...")
-        print("Important execution logs:")
+        if len(self.messages) > 0:
+            print("Important execution logs:")
         for i in range(len(self.messages)):
             print(self.messages[i])
