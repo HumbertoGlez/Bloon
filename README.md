@@ -21,4 +21,4 @@ Avance 6:
 Se corrigieron y completaron aspectos de la generación de código de declaración y llamada a funciones, se hicieron correcciones en el ciclo tipo For, se inició a implementar aspectos del mapa de memoria.
 
 Avance 7:
-Se realizó la implementación de la maquina virtual con ejecución de operaciones, estatutos lineales y funciones. También se agregó el operador módulo al cubo semántico y se implementó en la máquina virtual.
+Se realizó la implementación de la maquina virtual con ejecución de operaciones, estatutos lineales, condicionales, ciclos y funciones. También se agregó el operador módulo al cubo semántico y se implementó en la máquina virtual. Se hizo un refactor de la funcionalidad de operadores en la máquina virtual, para agregar validaciones extras para apegarse a la descripción del lenguaje y los requerimientos establecidos. Se agregaron nuevos casos de prueba para probar las funcionalidades de avances pasados y este.

@@ -320,8 +320,12 @@ class VirtualMachine():
         right_op = quad.right_op
        
         res_op = quad.ans
-
-        ans = self.operation(left_op, right_op, op)
+        if res_op.op_type == 'int':
+            ans = int(self.operation(left_op, right_op, op))
+        elif res_op.op_type == 'float':
+            ans = float(self.operation(left_op, right_op, op))
+        else:
+            ans = self.operation(left_op, right_op, op)
         self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal)
     
     def era(self, m_id):

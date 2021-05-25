@@ -1,0 +1,16 @@
+program conditionalTest;
+vars
+    x, y : int;
+main () {
+    x = 10;
+    y = 5;
+    cond (x > y) then {
+        write(x, " > ", y, " was true");
+    }
+    cond (x < y) then {
+        write(x, " < ", y, " was true");
+    }
+    else {
+        write(x, " < ", y, " was false");
+    }
+}

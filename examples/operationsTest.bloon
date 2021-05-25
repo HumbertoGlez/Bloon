@@ -12,4 +12,6 @@ main() {
     write(x, " < ", y, " = ", x<y);
     write(x, " > ", y, " = ", x>y);
     write(x, " == ", y, " = ", x==y);
+    y = x / y;
+    write(y);
 }
