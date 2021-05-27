@@ -115,12 +115,12 @@ class BloonListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BloonParser#var_k.
-    def enterVar_k(self, ctx:BloonParser.Var_kContext):
+    # Enter a parse tree produced by BloonParser#arr_idx.
+    def enterArr_idx(self, ctx:BloonParser.Arr_idxContext):
         pass
 
-    # Exit a parse tree produced by BloonParser#var_k.
-    def exitVar_k(self, ctx:BloonParser.Var_kContext):
+    # Exit a parse tree produced by BloonParser#arr_idx.
+    def exitArr_idx(self, ctx:BloonParser.Arr_idxContext):
         pass
 
 
@@ -148,42 +148,6 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#var_dec_l.
     def exitVar_dec_l(self, ctx:BloonParser.Var_dec_lContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#arr_idx.
-    def enterArr_idx(self, ctx:BloonParser.Arr_idxContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#arr_idx.
-    def exitArr_idx(self, ctx:BloonParser.Arr_idxContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#arr_idx_t.
-    def enterArr_idx_t(self, ctx:BloonParser.Arr_idx_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#arr_idx_t.
-    def exitArr_idx_t(self, ctx:BloonParser.Arr_idx_tContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#arr.
-    def enterArr(self, ctx:BloonParser.ArrContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#arr.
-    def exitArr(self, ctx:BloonParser.ArrContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#arr_t.
-    def enterArr_t(self, ctx:BloonParser.Arr_tContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#arr_t.
-    def exitArr_t(self, ctx:BloonParser.Arr_tContext):
         pass
 
 
@@ -301,15 +265,6 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#param_t.
     def exitParam_t(self, ctx:BloonParser.Param_tContext):
-        pass
-
-
-    # Enter a parse tree produced by BloonParser#p_dim.
-    def enterP_dim(self, ctx:BloonParser.P_dimContext):
-        pass
-
-    # Exit a parse tree produced by BloonParser#p_dim.
-    def exitP_dim(self, ctx:BloonParser.P_dimContext):
         pass
 
 

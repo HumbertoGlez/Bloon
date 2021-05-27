@@ -17,11 +17,11 @@ class VirtualMachine():
     CHAR_START = 500
     STRING_START = 750
     UNSPECIFIED = 1000
-    localInt_start = 0
-    localFloat_start = 0
-    localChar_start = 0
-    localString_start = 0
-    localUnspecified_start = 0
+    localInt_start = []
+    localFloat_start = []
+    localChar_start = []
+    localString_start = []
+    localUnspecified_start = []
     messages = []
 
     def __init__(self, parser, **kwargs):
@@ -40,24 +40,7 @@ class VirtualMachine():
                     value = str(value)
                 self.register_value(address, value, const_type, True)
     
-    def register_value(self, address, value, v_type, isglobal=False):
-        if isglobal:
-            curr_memory = self.mem_stack[0]
-        else:
-            curr_memory = self.mem
-        
-        if v_type == 'int':
-            curr_memory[self.INT_START + address] = value
-        elif v_type == 'float':
-            curr_memory[self.FLOAT_START + address] = value
-        elif v_type == 'char':
-            curr_memory[self.CHAR_START + address] = value
-        elif v_type == 'string':
-            curr_memory[self.STRING_START + address] = value
-        elif v_type == 'custom':
-            curr_memory[self.UNSPECIFIED + address] = address
-    
-    def get_value(self, address, v_type, isglobal=False):
+    def register_value(self, address, value, v_type, isglobal=False, dims=False):
         intStart = 0
         floatStart = 0
         charStart = 0
@@ -72,11 +55,44 @@ class VirtualMachine():
             uStart = self.UNSPECIFIED
         else:
             curr_memory = self.mem
-            intStart = self.localInt_start
-            floatStart = self.localFloat_start
-            charStart = self.localChar_start
-            strStart = self.localString_start
-            uStart = self.localUnspecified_start
+            intStart = self.localInt_start[-1]
+            floatStart = self.localFloat_start[-1]
+            charStart = self.localChar_start[-1]
+            strStart = self.localString_start[-1]
+            uStart = self.localUnspecified_start[-1]
+        
+        if v_type == 'int':
+            curr_memory[intStart + address] = value
+        elif v_type == 'float':
+            curr_memory[floatStart + address] = value
+        elif v_type == 'char':
+            curr_memory[charStart + address] = value
+        elif v_type == 'string':
+            curr_memory[strStart + address] = value
+        elif v_type == 'custom':
+            curr_memory[uStart + address] = address
+    
+    def get_value(self, address, v_type, isglobal=False, dims=False):
+        intStart = 0
+        floatStart = 0
+        charStart = 0
+        strStart = 0
+        uStart = 0
+        if isglobal:
+            curr_memory = self.mem_stack[0]
+            intStart = self.INT_START
+            floatStart = self.FLOAT_START
+            charStart = self.CHAR_START
+            strStart = self.STRING_START
+            uStart = self.UNSPECIFIED
+        else:
+            curr_memory = self.mem
+            intStart = self.localInt_start[-1]
+            floatStart = self.localFloat_start[-1]
+            charStart = self.localChar_start[-1]
+            strStart = self.localString_start[-1]
+            uStart = self.localUnspecified_start[-1]
+        
         if v_type == 'int':
             return curr_memory[intStart + address]
         elif v_type == 'float':
@@ -89,7 +105,7 @@ class VirtualMachine():
             return curr_memory[uStart + address]
 
     def write(self, operand):
-        value = self.get_value(operand.op_addr, operand.op_type, operand.isGlobal)
+        value = self.get_value(operand.op_addr, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.get_value(operand.op_addr, operand.op_type, operand.isGlobal, operand.dimensions)
         print(value, end ="")
 
     def read(self, operand):
@@ -98,17 +114,20 @@ class VirtualMachine():
             if operand.op_type == 'int':
                 try:
                     val = int(value)
-                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal)
+                    if operand.dimensions == 0:
+                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) 
+                    else: 
+                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, operand.dimensions)
                 except ValueError:
                     raise Exception(f"Invalid input to read for variable of type {operand.op_type}")
             elif operand.op_type == 'float':
                 try:
                     val = float(value)
-                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal)
+                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, operand.dimensions)
                 except ValueError:
                     raise Exception(f"Invalid input to read for variable of type {operand.op_type}")
         else:
-            self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal)
+            self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal, operand.dimensions)
 
     def operation(self, left, right, op):
         # CHECK FOR TYPE
@@ -118,8 +137,23 @@ class VirtualMachine():
         type_left_char = left.op_type == 'char'
         type_right_char = right.op_type == 'char'
 
-        left_v = self.get_value(left.op_addr, left.op_type, left.isGlobal)
-        right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal)
+        left_v = None
+        right_v = None
+        # print(left.op_id + ', ' + right.op_id)
+        if left.op_addr == None and left.op_type == 'int':
+            left_v = int(float(right.op_id))
+        elif left.dimensions == 0:
+            left_v = self.get_value(left.op_addr, left.op_type, left.isGlobal) 
+        else:
+            left_v = self.get_value(left.op_addr, left.op_type, left.isGlobal, left.dimensions)
+
+        if right.op_addr == None and right.op_type == 'int':
+            right_v = int(float(right.op_id))
+        elif right.dimensions == 0:
+            right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal) 
+        else:
+            right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal, right.dimensions)
+
         if left_v == None:
             raise Exception(f'Undefined variable: {left.op_id}')
         elif right_v == None:
@@ -322,11 +356,15 @@ class VirtualMachine():
         res_op = quad.ans
         if res_op.op_type == 'int':
             ans = int(self.operation(left_op, right_op, op))
+            # print(f'{left_op.op_id}' + ' ' + f'{op}' + ' ' + f'{right_op.op_id}' + ' = ' + f'{ans}')
         elif res_op.op_type == 'float':
             ans = float(self.operation(left_op, right_op, op))
         else:
             ans = self.operation(left_op, right_op, op)
-        self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal)
+        if res_op.dimensions == 0:
+            self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal)
+        else: 
+            self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal, res_op.dimensions)
     
     def era(self, m_id):
         localVarTable = self.meth_dir[m_id].m_vars
@@ -335,11 +373,11 @@ class VirtualMachine():
         charCount = len(localVarTable['char']) + self.meth_dir[m_id].m_temps['char']
         strCount = len(localVarTable['string']) + self.meth_dir[m_id].m_temps['string']
         uCount = 1000 if len(localVarTable['custom']) + self.meth_dir[m_id].m_temps['custom'] > 0 else 0
-        self.localInt_start = 0
-        self.localFloat_start = intCount
-        self.localChar_start = intCount + flCount
-        self.localString_start = intCount + flCount + charCount
-        self.localUnspecified_start = intCount + flCount + charCount + strCount
+        self.localInt_start.append(0)
+        self.localFloat_start.append(intCount)
+        self.localChar_start.append(intCount + flCount)
+        self.localString_start.append(intCount + flCount + charCount)
+        self.localUnspecified_start.append(intCount + flCount + charCount + strCount)
         # save previous memory in t_mem
         self.t_mem = self.mem
         # Create memory with just the needed addresses
@@ -351,9 +389,25 @@ class VirtualMachine():
         new_mem = self.mem
         p_local_address = self.param_refs[argNum]
         self.mem = self.t_mem
-        p_value = self.get_value(arg.op_addr, arg.op_type)
-        self.mem = new_mem
-        self.register_value(p_local_address, p_value, arg.op_type)
+        if arg.dimensions == 0:
+            p_value = self.get_value(arg.op_addr, arg.op_type) 
+            self.mem = new_mem
+            self.register_value(p_local_address, p_value, arg.op_type)
+        elif arg.dimensions == 1: 
+            for i in range(arg.dims[0].upperLim + 1):
+                p_value = self.get_value(arg.op_addr + i, arg.op_type, arg.isGlobal)
+                self.mem = new_mem
+                self.register_value(p_local_address + i, p_value, arg.op_type)
+                self.mem = self.t_mem
+            self.mem = new_mem
+            
+        elif arg.dimensions == 2:
+            for i in range((arg.dims[0].upperLim + 1) * (arg.dims[1].upperLim + 1)):
+                p_value = self.get_value(arg.op_addr+i, arg.op_type, arg.isGlobal)
+                self.mem = new_mem
+                self.register_value(p_local_address + i, p_value, arg.op_type)
+                self.mem = self.t_mem
+            self.mem = new_mem
     
     def rtn_stmt(self, res):
         val = self.get_value(res.op_addr, res.op_type, res.isGlobal)
@@ -362,11 +416,11 @@ class VirtualMachine():
         goSub = self.call_stack[-1] - 1
         r_addr = self.quad_queue[goSub].right_op
         curr_memory = self.mem_stack[-2]
-        intStart = self.INT_START if len(self.mem_stack) == 2  else self.localInt_start
-        flStart = self.FLOAT_START if len(self.mem_stack) == 2  else self.localFloat_start
-        charStart = self.CHAR_START if len(self.mem_stack) == 2  else self.localChar_start
-        strStart = self.STRING_START if len(self.mem_stack) == 2  else self.localString_start
-        uStart = self.UNSPECIFIED if len(self.mem_stack) == 2  else self.localUnspecified_start
+        intStart = self.INT_START if len(self.mem_stack) == 2  else self.localInt_start[-1]
+        flStart = self.FLOAT_START if len(self.mem_stack) == 2  else self.localFloat_start[-1]
+        charStart = self.CHAR_START if len(self.mem_stack) == 2  else self.localChar_start[-1]
+        strStart = self.STRING_START if len(self.mem_stack) == 2  else self.localString_start[-1]
+        uStart = self.UNSPECIFIED if len(self.mem_stack) == 2  else self.localUnspecified_start[-1]
         if res.op_type == 'int':
             curr_memory[intStart + r_addr] = int(val)
         elif res.op_type == 'float':
@@ -387,9 +441,9 @@ class VirtualMachine():
             quad = self.quad_queue[q]
             if quad.operator == 'ASSIGN':
                 value_op = quad.left_op
-                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal)
+                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal) if value_op.dimensions == 0 else self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal, value_op.dimensions)
                 result = quad.ans
-                self.register_value(result.op_addr, value, result.op_type, result.isGlobal)
+                self.register_value(result.op_addr, value, result.op_type, result.isGlobal) if result.dimensions == 0 else self.register_value(result.op_addr, value, result.op_type, result.isGlobal, result.dimensions)
             elif quad.operator == 'WRITE':
                 self.write(quad.ans)
             elif quad.operator == 'NEWLINE':
@@ -401,7 +455,7 @@ class VirtualMachine():
                 continue
             elif quad.operator == 'GOTOFALSE':
                 value_op = quad.left_op
-                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal)
+                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal) if value_op.dimensions == 0 else self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal, value_op.dimensions)
                 if value == False:
                     q = quad.ans
                     continue
@@ -420,9 +474,14 @@ class VirtualMachine():
             elif quad.operator == 'ENDMETH':
                 # Remove local memory from the top of mem_stack
                 self.mem_stack.pop()
+                self.localInt_start.pop()
+                self.localFloat_start.pop()
+                self.localChar_start.pop()
+                self.localString_start.pop()
+                self.localUnspecified_start.pop()
+                q = self.call_stack.pop()
                 # Set memory to last memory in stack
                 self.mem = self.mem_stack[-1]
-                q = self.call_stack.pop()
                 self.messages.append("Removed local memory.")
                 continue
             elif quad.operator == '+':
@@ -449,10 +508,10 @@ class VirtualMachine():
                 self.do_operation('ne', quad)
             elif quad.operator == '+_1':
                 value_op = quad.left_op
-                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal)
+                value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal) if value_op.dimensions == 0 else self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal, value_op.dimensions)
                 value += 1
                 ans_op = quad.ans
-                self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal)
+                self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal) if ans_op.dimensions == 0 else self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal, ans_op.dimensions)
             q += 1
         
         print("\nFinished execution...")

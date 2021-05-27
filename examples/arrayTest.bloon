@@ -1,0 +1,27 @@
+program arrayTest;
+
+vars
+    num[4], k, j, c : int;
+    floats[2,4] : float;
+    strs[5,5] : string;
+
+void meth arrays(int i[4], float f[2, 4], string texto[5,5]);
+{
+    write(i[0], ", ", f[0, 3]);
+    write(i[2] + f[1, 2]);
+    write(texto[2,4]);
+}
+
+main () {
+    floats[0, 3] = 5;
+    floats[1, 2] = 86;
+    num[0] = 3;
+    num[2] = 334;
+    write(num[2]);
+    write(floats[1,2]);
+    strs[0,0] = "bebecita";
+    write(strs[0,0]);
+    strs[2,4] = "kaka";
+    arrays(num, floats, strs);
+
+}

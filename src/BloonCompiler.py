@@ -27,21 +27,28 @@ class Method:
             self.m_vars_counts[v_type] = 0
         return self.m_vars_counts[v_type]
 
+@attr.s
+class Dim:
+    lowerLim: int = attr.ib(0)
+    upperLim: int = attr.ib(0)
+    m_or_k: int = attr.ib(0)
+
 
 @attr.s
 class Var:
     address: int = attr.ib()
     # By default variables are created as not global
     isGlobal: bool = attr.ib(False)
-    dimensions: int = attr.ib(0)
+    dimensions: List[Dim] = attr.ib(attr.Factory(list))
 
 @attr.s
 class Operand:
     op_id: str = attr.ib()
-    op_type: str = attr.ib()
+    op_type: str = attr.ib(None)
     op_addr: int = attr.ib(None)
     isGlobal: bool = attr.ib(False)
     dimensions: int = attr.ib(0)
+    dims: List[Dim] = attr.ib(attr.Factory(list))
 
 @attr.s
 class Quadruple:
@@ -69,6 +76,8 @@ class Compiler:
     gotos = []
     newVar_count = 0
     constants = {'int': {}, 'float': {}, 'string': {}, 'char': {}}
+    upperLimits = []
+    negative = False
 
     def define_method(self, method_type, method_id):
         if  method_id in self.meth_dir:
@@ -79,27 +88,46 @@ class Compiler:
             self.meth_dir[method_id].m_start = len(self.quad_queue)
 
     def process_method(self):
-        # method_id = self.method_stack[-1]
-        # method = self.meth_dir[method_id]
-        # if method.m_type != 'void':
-        #     result = self.operand_stack.pop()
-        #     self.quad_queue.append(Quadruple("RETURN", result))
         self.quad_queue.append(Quadruple("ENDMETH"))
         self.method_stack.pop()
         
     def define_param(self, param_type, param_id, param_dim = False):
         method_id = self.method_stack[-1]
         method = self.meth_dir[method_id]
-        dimensions = 0
-        if param_dim == 'arr':
-            dimensions = 1
-        elif param_dim == 'mat':
-            dimensions = 2
-        address = method.get_address(param_type)
-        method.m_vars[param_type][param_id] = Var(address, False, dimensions)
+        if param_dim == 1:
+            limit = self.upperLimits.pop()
+            size = limit
+            dim = Dim(0, limit - 1, 0)
+            dims = [dim]
+            address = method.get_address(param_type)
+            method.m_vars[param_type][param_id] = Var(address, False, dims)
+            method.m_param_addrs.append(address)
+            for i in range(1, size):
+                address = method.get_address(param_type)
+                method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False)
+        elif param_dim == 2:
+            limit2 = self.upperLimits.pop()
+            limit = self.upperLimits.pop()
+            size = limit * limit2
+            m1 = size / limit
+            dim = Dim(0, limit - 1, m1)
+            dims = [dim]
+            m2 = m1 / limit2
+            minusK = 0
+            dim = Dim(0, limit2 - 1, minusK)
+            dims.append(dim)
+            address = method.get_address(param_type)
+            method.m_vars[param_type][param_id] = Var(address, False, dims)
+            method.m_param_addrs.append(address)
+            for i in range(1, size):
+                address = method.get_address(param_type)
+                method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False)
+        else:
+            address = method.get_address(param_type)
+            method.m_vars[param_type][param_id] = Var(address, False)
+            method.m_param_addrs.append(address)
         method.m_param_count += 1
         method.m_param_types.append(param_type)
-        method.m_param_addrs.append(address)
 
     def get_var_dir(self, var_type, isGlobal=False):
         method_id =  "global" if isGlobal else self.method_stack[-1]
@@ -107,26 +135,58 @@ class Compiler:
         var_dir = method.m_vars[var_type]
         return var_dir
 
-    # Needs revision for arrays, etc
+    def set_negative(self):
+        self.negative = True
+
+    # Needs revision for classes
     def define_var(self, v_type):
         method = self.meth_dir[self.method_stack[-1]]
         var_table = method.m_vars
         if self.newVar_count > 0:
             while self.newVar_count > 0:
-                var_id = self.operand_stack.pop().op_id
+                var = self.operand_stack.pop()
+                var_id = var.op_id
                 self.newVar_count = self.newVar_count - 1
                 for given_type, var_dir in var_table.items():
                     if var_id in var_dir:
                         raise Exception(f"A variable named {var_id} was already defined with type {given_type}")
                 else:
                     isGlobal = self.method_stack[-1] == "global"
-                    var_dir = self.get_var_dir(v_type)
-                    address = method.get_address(v_type)
-                    var_dir[var_id] = Var(address, isGlobal)
-                        
+                    var_dir = self.get_var_dir(v_type, isGlobal)
+                    if var.dimensions == 1:
+                        limit = self.upperLimits.pop()
+                        size = limit
+                        dim = Dim(0, limit - 1, 0)
+                        dims = [dim]
+                        address = method.get_address(v_type)
+                        var_dir[var_id] = Var(address, isGlobal, dims)
+                        for i in range(1, size):
+                            address = method.get_address(v_type)
+                            var_dir[f'{var_id}{i}'] = Var(address, isGlobal)
+                    elif var.dimensions == 2:
+                        limit = self.upperLimits.pop(-2)
+                        limit2 = self.upperLimits.pop()
+                        size = limit * limit2
+                        m1 = size / limit
+                        dim = Dim(0, limit - 1, m1)
+                        dims = [dim]
+                        m2 = m1 / limit2
+                        minusK = 0
+                        dim = Dim(0, limit2 - 1, minusK)
+                        dims.append(dim)
+                        address = method.get_address(v_type)
+                        var_dir[var_id] = Var(address, isGlobal, dims)
+                        for i in range(1, size):
+                            address = method.get_address(v_type)
+                            var_dir[f'{var_id}{i}'] = Var(address, isGlobal)
+                    else:
+                        address = method.get_address(v_type)
+                        var_dir[var_id] = Var(address, isGlobal)                        
         else:
             raise Exception(f"Unknown error at variable declaration of type {v_type}.")
     
+    def add_limit(self, limit):
+        self.upperLimits.append(int(limit))
 
     def assign_var(self):
         method = self.meth_dir[self.method_stack[-1]]
@@ -147,31 +207,75 @@ class Compiler:
             left_oper = self.operand_stack.pop()
             left_type = left_oper.op_type
             result_type = operation_result_type(left_type, right_type, op)
-            
-            # method = self.method_stack[-1]
-            # res_oper = Operand(f't{self.temp}', method == 'global')
-            # self.operand_stack.append(res_oper)
-            # self.type_stack.append(result_type)
             self.quad_queue.append(Quadruple(op, left_oper, right_oper, left_oper))
-            # self.temp = self.temp + 1
-            # self.assign_var()
         else:
             raise Exception(f'Invalid operator: {op} for assignment')
 
-    def add_operand(self, o):
-        self.operand_stack.append(Operand(o, op_type=None))
+    def add_operand(self, o, dims=0):
+        self.operand_stack.append(Operand(o, dimensions=dims))
 
     def add_op(self, op):
         self.operator_stack.append(op)
 
-    def get_var(self, id):
+    def get_array_item(self, dimensions):
+        method = self.meth_dir[self.method_stack[-1]]
+        myVariables = method.m_vars
+        if dimensions == 1:
+            row = self.operand_stack.pop()
+            id = self.operand_stack.pop().op_id
+            for vType, varList in myVariables.items():
+                if id in varList:
+                    var = varList[id]
+                    myType = vType
+                    if len(var.dimensions) == 0:
+                        raise Exception(f'Variable {id} is not an array')
+                    else:
+                        myDim = var.dimensions[0]
+                        self.operator_stack.append('FakeBottom')
+                        self.quad_queue.append(Quadruple('VERIFY', row, myDim.lowerLim, myDim.upperLim))
+                        offset = 0
+                        temp_address = int(row.op_id) + var.address
+                        self.operand_stack.append(Operand(f'{id}[{row.op_id}]', myType, temp_address, self.method_stack[-1] == 'global', 1))
+                        self.operator_stack.pop() # Eliminates FakeBottom
+        elif dimensions == 2:
+            col = self.operand_stack.pop()
+            row = self.operand_stack.pop()
+            id = self.operand_stack.pop().op_id
+            for vType, varList in myVariables.items():
+                if id in varList:
+                    var = varList[id]
+                    myType = vType
+                    if len(var.dimensions) == 0:
+                        raise Exception(f'Variable {id} is not an array')
+                    else:
+                        myDim = var.dimensions[0]
+                        offset = 0
+                        self.operator_stack.append('FakeBottom')
+
+                        self.quad_queue.append(Quadruple('VERIFY', row, myDim.lowerLim, myDim.upperLim))
+                        rowTimesM = int(row.op_id) * myDim.m_or_k
+
+                        myDim = var.dimensions[1]
+                        self.quad_queue.append(Quadruple('VERIFY', col, myDim.lowerLim, myDim.upperLim))
+                        aux2 = col
+                        aux1 = rowTimesM
+                        colPlusAux = int(aux1) + int(aux2.op_id)
+
+                        aux1 = colPlusAux
+                        temp_address = aux1 + var.address
+                        self.operand_stack.append(Operand(f'{id}[{row.op_id},{col.op_id}]', myType, temp_address, self.method_stack[-1] == 'global', 2))
+                        self.operator_stack.pop() # Eliminates FakeBottom
+
+    def get_var(self):
+        id = self.operand_stack.pop().op_id
         #We first check in the current scope
         myVariables = self.meth_dir[self.method_stack[-1]].m_vars
         for vType, varDir in myVariables.items():
             if id in varDir:
                 var = varDir[id]
                 myType = vType
-                self.operand_stack.append(Operand(id, myType, var.address, False, var.dimensions))
+                isGlobal = self.method_stack[-1] == 'global'
+                self.operand_stack.append(Operand(id, myType, var.address, isGlobal, len(var.dimensions), var.dimensions))
                 break
         # If we dont find it, we check the global scope
         else:
@@ -180,7 +284,7 @@ class Compiler:
                 if id in varDir:
                     var = varDir[id]
                     myType = vType
-                    self.operand_stack.append(Operand(id, myType, var.address, True, var.dimensions))
+                    self.operand_stack.append(Operand(id, myType, var.address, True, len(var.dimensions), var.dimensions))
                     break
             else:
                 raise Exception(f'{id} was not defined.')
@@ -265,8 +369,8 @@ class Compiler:
             self.quad_queue.append(Quadruple("ERA", ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
-                if argument.op_type == method.m_param_types[i]:
-                    self.quad_queue.append(Quadruple("PARAM", argument, None, i))
+                if argument.op_type == method.m_param_types[method.m_param_count -1 - i]:
+                    self.quad_queue.append(Quadruple("PARAM", argument, None, method.m_param_count -1 - i))
                 else:
                     raise Exception(f"Invalid argument at method {id} call")
             method_id = self.method_stack[-1]

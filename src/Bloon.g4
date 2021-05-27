@@ -17,6 +17,7 @@ ID: [A-Za-z_]([A-Za-z_]|[0-9])*;
 CONST_INT: [1-9][0-9]*|[0];
 CONST_FLOAT: (([1-9][0-9]*|[0])[.])[0-9]+;
 CONST_STR: ["].*? ["];
+CONST_CHAR: ['].['];
 WHITESPACE: [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 /*
@@ -35,19 +36,13 @@ class_j: 'attributes' '<' var_dec '>' class_l | class_l;
 class_l: 'methods' '<' class_p | '}' ';';
 class_p: func '>' '}' ';' | func class_p;
 
-var: ID var_t {compi.get_var($ID.text)};
-var_t: arr_idx var_k | var_k;
-var_k: '.' var | ;
+var: ID {compi.add_operand($ID.text)} var_t;
+var_t: arr_idx | arr_idx '.' var | '.' var | {compi.get_var()};
+arr_idx: '[' exp (',' exp ']' {compi.get_array_item(2)} | ']' {compi.get_array_item(1)});
 
 var_dec: 'vars' var_dec_t;
-var_dec_t: ID (arr)? {compi.add_operand($ID.text); compi.increase_varCount()} (',' var_dec_t | ':' (var_type {compi.define_var($var_type.text)}';' var_dec_l | custom_type {compi.define_var($custom_type.text)} ';' var_dec_l));
+var_dec_t: (ID '[' CONST_INT {compi.add_limit($CONST_INT.text)} (',' CONST_INT {compi.add_limit($CONST_INT.text)} ']' {compi.add_operand($ID.text, 2);} | ']' {compi.add_operand($ID.text, 1)}) {compi.increase_varCount()} | ID {compi.add_operand($ID.text); compi.increase_varCount()}) (',' var_dec_t | ':' (var_type {compi.define_var($var_type.text)}';' var_dec_l | custom_type {compi.define_var($custom_type.text)} ';' var_dec_l));
 var_dec_l: var_dec_t | ;
-
-arr_idx: '[' exp arr_idx_t;
-arr_idx_t: ',' exp ']' | ']';
-
-arr: '[' CONST_INT arr_t;
-arr_t: ',' CONST_INT ']' | ']';
 
 assign: var assign_t;
 assign_t: '=' super_exp {compi.assign_var()}';' | assign_op super_exp {compi.arithmetic_assign($assign_op.text)} ';';
@@ -70,11 +65,10 @@ func_p: var_dec block {compi.process_method()} | block {compi.process_method()};
 
 param: 
         var_type ID {compi.define_param($var_type.text, $ID.text)} param_t 
-        | var_type ID p_dim {compi.define_param($var_type.text, $ID.text, $p_dim.text)} param_t
+        | var_type ID ('[' CONST_INT ']' {compi.add_limit($CONST_INT.text); compi.define_param($var_type.text, $ID.text, 1)} | '[' CONST_INT {compi.add_limit($CONST_INT.text)} ',' CONST_INT {compi.add_limit($CONST_INT.text)} ']'  {compi.define_param($var_type.text, $ID.text, 2)}) param_t
         | custom_type ID {compi.define_param($custom_type.text, $ID.text)} param_t
-        | custom_type ID p_dim {compi.define_param($custom_type.text, $ID.text, $p_dim.text)} param_t;
+        | custom_type ID ('[' CONST_INT ']' {compi.add_limit($CONST_INT.text); compi.define_param($custom_type.text, $ID.text, 1)} | '[' CONST_INT {compi.add_limit($CONST_INT.text)} ',' CONST_INT {compi.add_limit($CONST_INT.text)} ']'  {compi.define_param($custom_type.text, $ID.text, 2)}) param_t;
 param_t: ',' param | ;
-p_dim: 'arr' | 'mat';
 
 block: '{' block_t;
 block_t: statement block_t | statement '}' | '}';
@@ -119,6 +113,6 @@ exp: term (('+' {compi.add_op('+')} | '-' {compi.add_op('-')}) term {compi.arith
 term: factor (('*' {compi.add_op('*')} | '/' {compi.add_op('/')} | '%' {compi.add_op('%')}) factor {compi.arithmetic_operation('*', '/', '%')})*;
 
 factor: '(' {compi.open_parens()} expression ')' {compi.close_parens()} | var_const | call | factor_t;
-factor_t: '+' var_const | '-' var_const;
+factor_t: var_const | '-' {compi.set_negative()} var_const;
 
-var_const: var | CONST_INT {compi.get_const($CONST_INT.text, "int")} | CONST_FLOAT {compi.get_const($CONST_FLOAT.text, "float")} | CONST_STR {compi.get_const($CONST_STR.text, "string")};
+var_const: var | CONST_INT {compi.get_const($CONST_INT.text, "int")} | CONST_FLOAT {compi.get_const($CONST_FLOAT.text, "float")} | CONST_STR {compi.get_const($CONST_STR.text, "string")} | CONST_CHAR {compi.get_const($CONST_CHAR.text, "char")};
