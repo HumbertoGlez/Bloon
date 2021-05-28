@@ -9,7 +9,7 @@ from BloonCompiler import Compiler
 compi = Compiler()
 quad_queue = None
 meth_dir = None
-type_dir = None
+class_dir = None
 constants = None
 
 
@@ -70,12 +70,12 @@ class BloonListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by BloonParser#class_j.
-    def enterClass_j(self, ctx:BloonParser.Class_jContext):
+    # Enter a parse tree produced by BloonParser#class_att.
+    def enterClass_att(self, ctx:BloonParser.Class_attContext):
         pass
 
-    # Exit a parse tree produced by BloonParser#class_j.
-    def exitClass_j(self, ctx:BloonParser.Class_jContext):
+    # Exit a parse tree produced by BloonParser#class_att.
+    def exitClass_att(self, ctx:BloonParser.Class_attContext):
         pass
 
 
@@ -94,6 +94,42 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#class_p.
     def exitClass_p(self, ctx:BloonParser.Class_pContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#class_func.
+    def enterClass_func(self, ctx:BloonParser.Class_funcContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#class_func.
+    def exitClass_func(self, ctx:BloonParser.Class_funcContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#c_func_t.
+    def enterC_func_t(self, ctx:BloonParser.C_func_tContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#c_func_t.
+    def exitC_func_t(self, ctx:BloonParser.C_func_tContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#c_func_k.
+    def enterC_func_k(self, ctx:BloonParser.C_func_kContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#c_func_k.
+    def exitC_func_k(self, ctx:BloonParser.C_func_kContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#c_func_p.
+    def enterC_func_p(self, ctx:BloonParser.C_func_pContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#c_func_p.
+    def exitC_func_p(self, ctx:BloonParser.C_func_pContext):
         pass
 
 
@@ -301,6 +337,15 @@ class BloonListener(ParseTreeListener):
 
     # Exit a parse tree produced by BloonParser#call.
     def exitCall(self, ctx:BloonParser.CallContext):
+        pass
+
+
+    # Enter a parse tree produced by BloonParser#call_class_meth.
+    def enterCall_class_meth(self, ctx:BloonParser.Call_class_methContext):
+        pass
+
+    # Exit a parse tree produced by BloonParser#call_class_meth.
+    def exitCall_class_meth(self, ctx:BloonParser.Call_class_methContext):
         pass
 
 

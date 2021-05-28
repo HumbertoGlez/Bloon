@@ -1,7 +1,7 @@
 import attr
+import copy
 from typing import Dict, Any, List
 from collections import deque
-from queue import Queue
 from tools import operation_result_type
 
 # Class used to create methods
@@ -19,14 +19,29 @@ class Method:
     m_param_types: List[str] = attr.ib(attr.Factory(list))
     m_start: int = attr.ib(0)
     m_end: int = attr.ib(0)
-    m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'custom': 0}
+    m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'Any': 0}
     m_temp_count: int = attr.ib(0)
+    m_member_addrs: List[int] = attr.ib(attr.Factory(list))
     def get_address(self, v_type):
         if v_type in self.m_vars_counts:
             self.m_vars_counts[v_type] += 1
         else:
             self.m_vars_counts[v_type] = 0
         return self.m_vars_counts[v_type]
+
+@attr.s
+class Attribute:
+    a_id: str = attr.ib()
+    a_type: str = attr.ib()
+    dims: int = attr.ib(0)
+    dimSizes: List[int] = attr.ib(attr.Factory(list))
+
+@attr.s
+class MyClass:
+    c_id: str = attr.ib()
+    attributes: Dict[str, Attribute] = attr.ib(attr.Factory(dict))
+    # attributes: List[any] = attr.ib(attr.Factory(list))
+    methods: Dict[str, Method] = attr.ib(attr.Factory(dict))
 
 @attr.s
 class Dim:
@@ -62,16 +77,18 @@ class Quadruple:
 class Compiler:
     # Dictionary of methods, key is string with id
     meth_dir = {
-        "global": Method('void', {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}}),
-        "main": Method('int',  {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}}),
+        "global": Method('void', {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}}),
+        "main": Method('int',  {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}}),
         "read": Method('void', {}),
         "write": Method('void', {}),
     }
-    type_dir = {}
+    class_dir = {}
     method_stack = deque(["global"])
+    # Stack to keep track of where the methods in method stack are stored, False = meth dir
+    methodLoc_stack = deque([False])
     operator_stack = deque()
     operand_stack = deque()
-    # type_stack = deque()
+    class_stack = deque()
     # initialize quad queue with go to main, later to be filled
     quad_queue = [Quadruple("GOTO")]
     gotos = []
@@ -80,23 +97,141 @@ class Compiler:
     upperLimits = []
     negative = False
     floop_stack = deque()
+    basicTypes = ['int', 'float', 'char', 'string']
+    currClass = ''
 
-    def define_method(self, method_type, method_id):
-        if  method_id in self.meth_dir:
-            raise Exception("Method {} was already defined".format(method_id))
+    def define_class(self, isBaby=False):
+        if isBaby:           
+            parentId = self.operand_stack.pop().op_id
+            babyId = self.operand_stack.pop().op_id
+            if babyId in self.class_dir:
+                raise Exception("Class {} was already defined".format(babyId))
+            elif parentId not in self.class_dir:
+                raise Exception("Parent class {} does not exist".format(parentId))
+            else:
+                self.class_stack.append(babyId)
+                self.methodLoc_stack.append(babyId)
+                self.class_dir[babyId] = copy.deepcopy(self.class_dir[parentId])
+                self.class_dir[babyId].c_id = babyId
+        else:
+            babyId = self.operand_stack.pop().op_id
+            if babyId in self.class_dir:
+                raise Exception("Class {} was already defined".format(babyId))
+            else:
+                self.class_stack.append(babyId)
+                self.methodLoc_stack.append(babyId)
+                self.class_dir[babyId] = MyClass(babyId)
+    
+    def define_attr(self, a_type):
+        cl = self.class_dir[self.class_stack[-1]]
+        attr_table = cl.attributes
+        if self.newVar_count > 0:
+            while self.newVar_count > 0:
+                a = self.operand_stack.pop()
+                attr_id = a.op_id
+                self.newVar_count = self.newVar_count - 1
+                if attr_id in attr_table:
+                    raise Exception(f'An attribute named {attr_id} was already defined')
+                else:
+                    if a.dimensions == 1:
+                        limit = self.upperLimits.pop()
+                        attr_table[a.op_id] = Attribute(a.op_id, a_type, 1, [limit])
+                    elif a.dimensions == 2:
+                        limit2 = self.upperLimits.pop()
+                        limit = self.upperLimits.pop()
+                        attr_table[a.op_id] = Attribute(a.op_id, a_type, 2, [limit, limit2])
+                    else:
+                        attr_table[a.op_id] = Attribute(a.op_id, a_type)                      
+        else:
+            raise Exception(f"Unknown error at attribute declaration of type {a_type}.")
+    
+    def end_class(self):
+        self.class_stack.pop()
+        self.methodLoc_stack.pop()
+
+    def allocate_attributes(self, classObj, method):
+        var_table = method.m_vars
+        isGlobal = False
+        for key in classObj.attributes:
+            a = classObj.attributes[key]
+            v_name = f'this.{a.a_id}'
+            if a.dims == 1:
+                limit = a.dimSizes[0]
+                size = limit
+                dim = Dim(0, limit - 1, 0)
+                dims = [dim]
+                address = method.get_address(a.a_type)
+                var_table[a.a_type][v_name] = Var(address, isGlobal, dims)
+                method.m_member_addrs.append(address)
+                for j in range(1, size):
+                    address = method.get_address(a.a_type)
+                    var_table[a.a_type][f'{v_name}{j}'] = Var(address, isGlobal)
+            elif a.dims == 2:
+                limit = a.dimSizes[0]
+                limit2 = a.dimSizes[1]
+                size = limit * limit2
+                m1 = size / limit
+                dim = Dim(0, limit - 1, m1)
+                dims = [dim]
+                minusK = 0
+                dim = Dim(0, limit2 - 1, minusK)
+                dims.append(dim)
+                address = method.get_address(a.a_type)
+                var_table[a.a_type][v_name] = Var(address, isGlobal, dims)
+                method.m_member_addrs.append(address)
+                for j in range(1, size):
+                    address = method.get_address(a.a_type)
+                    var_table[a.a_type][f'{v_name}{j}'] = Var(address, isGlobal)  
+            else:
+                address = method.get_address(a.a_type)
+                var_table[a.a_type][v_name] = Var(address, isGlobal)
+                method.m_member_addrs.append(address) 
+
+    def define_method(self, method_type, method_id, isClass = False):
+        if method_type not in self.basicTypes and method_type not in self.class_dir and method_type != 'void':
+            raise Exception("Invalid return type for method {}".format(method_id))
+        elif method_type not in self.basicTypes:
+            mt = method_type
+            method_type = 'Any'
+
+        if isClass:
+            if method_id in self.class_dir[self.class_stack[-1]].methods:
+                raise Exception("Method {} was already defined in this class".format(method_id))
+            elif method_id == self.class_stack[-1]:
+                raise Exception("Method cannot be named exactly like parent class")
+            else:
+                myC = self.class_dir[self.class_stack[-1]]
+                self.method_stack.append(method_id)
+                if self.methodLoc_stack[-1] != self.class_stack[-1]:
+                    self.methodLoc_stack.append(self.class_stack[-1])
+                myC.methods[method_id] = Method(method_type, {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}})
+                myC.methods[method_id].m_start = len(self.quad_queue)
+                self.allocate_attributes(myC, myC.methods[method_id]);
+
+        elif  method_id in self.meth_dir:
+            raise Exception("Method {} was already defined or is a reserved word".format(method_id))
         else:
             self.method_stack.append(method_id)
-            self.meth_dir[method_id] = Method(method_type, {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'custom': {}})
+            self.methodLoc_stack.append(False)
+            self.meth_dir[method_id] = Method(method_type, {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}})
             self.meth_dir[method_id].m_start = len(self.quad_queue)
 
     def process_method(self):
         self.quad_queue.append(Quadruple("ENDMETH"))
-        self.meth_dir[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
+        if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global':
+            self.meth_dir[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
+        else:
+            self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
         self.method_stack.pop()
         
     def define_param(self, param_type, param_id, param_dim = False):
+        pt = param_type
+        if param_type not in self.basicTypes and param_type not in self.class_dir:
+            raise Exception(f'{param_type} is not a valid type or a previously defined class.')
+        elif param_type not in self.basicTypes:
+            param_type = 'Any'
         method_id = self.method_stack[-1]
-        method = self.meth_dir[method_id]
+        method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
         if param_dim == 1:
             limit = self.upperLimits.pop()
             size = limit
@@ -105,9 +240,13 @@ class Compiler:
             address = method.get_address(param_type)
             method.m_vars[param_type][param_id] = Var(address, False, dims)
             method.m_param_addrs.append(address)
+            if pt not in self.basicTypes:
+                self.define_object_variables(method, False, param_id, pt)
             for i in range(1, size):
                 address = method.get_address(param_type)
                 method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False)
+                if pt not in self.basicTypes:
+                    self.define_object_variables(method, False, f'{param_id}{i}', pt)
         elif param_dim == 2:
             limit2 = self.upperLimits.pop()
             limit = self.upperLimits.pop()
@@ -122,34 +261,85 @@ class Compiler:
             address = method.get_address(param_type)
             method.m_vars[param_type][param_id] = Var(address, False, dims)
             method.m_param_addrs.append(address)
+            if pt not in self.basicTypes:
+                self.define_object_variables(method, False, param_id, pt)
             for i in range(1, size):
                 address = method.get_address(param_type)
                 method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False)
+                if pt not in self.basicTypes:
+                    self.define_object_variables(method, False, f'{param_id}{i}', pt)
         else:
             address = method.get_address(param_type)
             method.m_vars[param_type][param_id] = Var(address, False)
             method.m_param_addrs.append(address)
+            if pt not in self.basicTypes:
+                self.define_object_variables(method, False, param_id, pt)
         method.m_param_count += 1
         method.m_param_types.append(param_type)
 
     def get_var_dir(self, var_type, isGlobal=False):
+        if var_type not in self.basicTypes and var_type in self.class_dir:
+            var_type = 'Any'
         method_id =  "global" if isGlobal else self.method_stack[-1]
-        method = self.meth_dir[method_id]
+        method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
         var_dir = method.m_vars[var_type]
         return var_dir
 
     def set_negative(self):
         self.negative = True
+    
+    def define_object_variables(self, method, isGlobal, objId, objType):
+        for key in self.class_dir[objType].attributes:
+            cl = self.class_dir[objType]
+            a = cl.attributes[key]
+            var_dir = self.get_var_dir(a.a_type, isGlobal)
+            v_name = objId + '.' + a.a_id
+            if a.dims == 1:
+                limit = a.dimSizes[0]
+                size = limit
+                dim = Dim(0, limit - 1, 0)
+                dims = [dim]
+                address = method.get_address(a.a_type)
+                var_dir[v_name] = Var(address, isGlobal, dims)
+                for j in range(1, size):
+                    address = method.get_address(a.a_type)
+                    var_dir[f'{v_name}{j}'] = Var(address, isGlobal)
+            elif a.dims == 2:
+                limit = a.dimSizes[0]
+                limit2 = a.dimSizes[1]
+                size = limit * limit2
+                m1 = size / limit
+                dim = Dim(0, limit - 1, m1)
+                dims = [dim]
+                minusK = 0
+                dim = Dim(0, limit2 - 1, minusK)
+                dims.append(dim)
+                address = method.get_address(a.a_type)
+                var_dir[v_name] = Var(address, isGlobal, dims)
+                for j in range(1, size):
+                    address = method.get_address(a.a_type)
+                    var_dir[f'{v_name}{j}'] = Var(address, isGlobal)  
+            else:
+                address = method.get_address(a.a_type)
+                var_dir[v_name] = Var(address, isGlobal)  
 
     # Needs revision for classes
     def define_var(self, v_type):
-        method = self.meth_dir[self.method_stack[-1]]
+        vt = v_type
+        if v_type not in self.basicTypes and v_type not in self.class_dir:
+            raise Exception(f'{v_type} is not a valid type or a previously defined class.')
+        elif v_type not in self.basicTypes:
+            v_type = 'Any'
+        method = self.meth_dir[self.method_stack[-1]] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]]
         var_table = method.m_vars
+        
         if self.newVar_count > 0:
             while self.newVar_count > 0:
                 var = self.operand_stack.pop()
                 var_id = var.op_id
                 self.newVar_count = self.newVar_count - 1
+                if var_id == 'this':
+                    raise Exception(f'A variable cannot be named with the keyword "this"')
                 for given_type, var_dir in var_table.items():
                     if var_id in var_dir:
                         raise Exception(f"A variable named {var_id} was already defined with type {given_type}")
@@ -163,9 +353,13 @@ class Compiler:
                         dims = [dim]
                         address = method.get_address(v_type)
                         var_dir[var_id] = Var(address, isGlobal, dims)
+                        if vt not in self.basicTypes:
+                            self.define_object_variables(method, isGlobal, var_id, vt)
                         for i in range(1, size):
                             address = method.get_address(v_type)
                             var_dir[f'{var_id}{i}'] = Var(address, isGlobal)
+                            if vt not in self.basicTypes:
+                                self.define_object_variables(method, isGlobal, f'{var_id}{i}', vt)
                     elif var.dimensions == 2:
                         limit = self.upperLimits.pop(-2)
                         limit2 = self.upperLimits.pop()
@@ -179,20 +373,26 @@ class Compiler:
                         dims.append(dim)
                         address = method.get_address(v_type)
                         var_dir[var_id] = Var(address, isGlobal, dims)
+                        if vt not in self.basicTypes:
+                            self.define_object_variables(method, isGlobal, var_id, vt)
                         for i in range(1, size):
                             address = method.get_address(v_type)
                             var_dir[f'{var_id}{i}'] = Var(address, isGlobal)
+                            if vt not in self.basicTypes:
+                                self.define_object_variables(method, isGlobal, f'{var_id}{i}', vt)
                     else:
                         address = method.get_address(v_type)
-                        var_dir[var_id] = Var(address, isGlobal)                        
+                        var_dir[var_id] = Var(address, isGlobal)
+                        if vt not in self.basicTypes:
+                            self.define_object_variables(method, isGlobal, var_id, vt)                        
         else:
-            raise Exception(f"Unknown error at variable declaration of type {v_type}.")
+            raise Exception(f"Unknown error at variable declaration of type {vt}.")
     
     def add_limit(self, limit):
         self.upperLimits.append(int(limit))
 
     def assign_var(self):
-        method = self.meth_dir[self.method_stack[-1]]
+        method = self.meth_dir[self.method_stack[-1]] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]]
         var_table = method.m_vars
         res = self.operand_stack.pop()
         res_type = res.op_type
@@ -221,7 +421,7 @@ class Compiler:
         self.operator_stack.append(op)
 
     def get_array_item(self, dimensions):
-        method = self.meth_dir[self.method_stack[-1]]
+        method = self.meth_dir[self.method_stack[-1]] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]]
         myVariables = method.m_vars
         if dimensions == 1:
             row = self.operand_stack.pop()
@@ -269,13 +469,20 @@ class Compiler:
                         self.operand_stack.append(Operand(f'{id}[{row.op_id},{col.op_id}]', myType, temp_address, self.method_stack[-1] == 'global', 2))
                         self.operator_stack.pop() # Eliminates FakeBottom
 
-    def get_var(self):
-        id = self.operand_stack.pop().op_id
+    def get_var(self, fromClass = False):
+        if fromClass:
+            var = self.operand_stack.pop()
+            parentVar = self.operand_stack.pop()
+            cl = parentVar.op_type
+            id = parentVar.op_id + '.' + var.op_id
+        else:
+            id = self.operand_stack.pop().op_id
         if self.negative:
             id = f'-{id}'
             self.negative = False
         #We first check in the current scope
-        myVariables = self.meth_dir[self.method_stack[-1]].m_vars
+        method = self.meth_dir[self.method_stack[-1]] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]]
+        myVariables = method.m_vars
         for vType, varDir in myVariables.items():
             if id in varDir:
                 var = varDir[id]
@@ -306,7 +513,7 @@ class Compiler:
             result_type = operation_result_type(left_type, right_type, oper)
         
             method_id = self.method_stack[-1]
-            method = self.meth_dir[method_id]
+            method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
             address = method.get_address(result_type)
             res_op = Operand(f't{method.m_temp_count}', result_type, address, method_id == 'global')
             self.operand_stack.append(res_op)
@@ -359,14 +566,26 @@ class Compiler:
     
     def rtn_stmt(self):
         rtn_op = self.operand_stack.pop()
-        self.quad_queue.append(Quadruple("RETURN", None, Operand(f'{self.method_stack[-1]}'), rtn_op))
+        if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global':
+            self.quad_queue.append(Quadruple("RETURN", None, Operand(f'{self.method_stack[-1]}'), rtn_op))
+        else:
+            self.quad_queue.append(Quadruple("RETURN", Operand(self.methodLoc_stack[-1]), Operand(f'{self.method_stack[-1]}'), rtn_op))
 
-    def verify_method(self, id):
-        if id not in self.meth_dir:
+    def verify_method(self, id, cl = False):
+        if not cl and id not in self.meth_dir:
             raise Exception(f"Method {id} was not declared.")
+        elif cl:
+            for className, classObj in self.class_dir.items():
+                if id in classObj.methods:
+                    self.currClass = className;
+                    return
+            else:
+                raise Exception(f"Method {id} was not declared in class {cl}.")
 
-    def call_method(self, id):
-        method = self.meth_dir[id]
+    def call_method(self, id, cl = False):
+        if cl:
+            cl = self.currClass
+        method = self.meth_dir[id] if not cl else self.class_dir[cl].methods[id]
         if id == 'read':
             variable = self.operand_stack.pop()
             self.quad_queue.append(Quadruple("READ", None, None, variable))
@@ -375,23 +594,37 @@ class Compiler:
             self.quad_queue.append(Quadruple("WRITE", None, None, res))
         else:
             # Use method signature to pass arguments to parameters
-            self.quad_queue.append(Quadruple("ERA", ans=id))
+            if cl == False:
+                self.quad_queue.append(Quadruple("ERA", ans=id))
+            else:
+                self.quad_queue.append(Quadruple("ERA", None, Operand(cl), ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
                 if argument.op_type == method.m_param_types[method.m_param_count -1 - i]:
                     self.quad_queue.append(Quadruple("PARAM", argument, None, method.m_param_count -1 - i))
                 else:
                     raise Exception(f"Invalid argument at method {id} call")
+            if cl:
+                parentId = self.operand_stack.pop().op_id
+                count = 0
+                for key in self.class_dir[cl].attributes:
+                    a = self.class_dir[cl].attributes[key]
+                    self.add_operand(f'{parentId}.{a.a_id}')
+                    self.get_var()
+                    arg = self.operand_stack.pop()
+                    self.quad_queue.append(Quadruple("MEMBERVAR", arg, None, count))
+                    count += 1
             method_id = self.method_stack[-1]
             method_type = method.m_type
+            meth = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
             address = None
             # Create temp for return value if not void
             if method_type != 'void':
-                address = self.meth_dir[method_id].get_address(method_type)
-                self.meth_dir[method_id].m_vars[method_type][f"t{self.meth_dir[method_id].m_temp_count}"] = Var(address)
-                rtn_op = Operand(f"t{self.meth_dir[method_id].m_temp_count}", method_type, address, method_id == 'global')
+                address = meth.get_address(method_type)
+                meth.m_vars[method_type][f"t{meth.m_temp_count}"] = Var(address)
+                rtn_op = Operand(f"t{meth.m_temp_count}", method_type, address, method_id == 'global')
                 self.operand_stack.append(rtn_op)
-                self.meth_dir[method_id].m_temp_count += 1
+                meth.m_temp_count += 1
                 # We dont add this temporal to the count per type because it was already added to var table
             # GOSUB with the initial address of the method, and the address of the temp to store the return value if not void
             self.quad_queue.append(Quadruple("GOSUB", id, address, method.m_start))
@@ -443,7 +676,7 @@ class Compiler:
             self.floop_stack.append(self.operand_stack.pop())
             result_type = operation_result_type(self.floop_stack[-1].op_type, exp.op_type, '<=')
             method_id = self.method_stack[-1]
-            method = self.meth_dir[method_id]
+            method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
             address = method.get_address(result_type)
             res_op = Operand(f't{method.m_temp_count}', result_type, address, method_id == 'global')
 
@@ -478,5 +711,5 @@ class Compiler:
     def save_state(self, parser):
         parser.quad_queue = self.quad_queue
         parser.meth_dir = self.meth_dir
-        parser.type_dir = self.type_dir
+        parser.class_dir = self.class_dir
         parser.constants = self.constants

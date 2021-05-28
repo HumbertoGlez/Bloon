@@ -3,7 +3,7 @@ program fibonacciTest;
 vars
     i : int;
 
-int meth fibonacci(int n);
+int meth fibonacci(int n)
 {
     cond (n <= 1) then {
         return (n);

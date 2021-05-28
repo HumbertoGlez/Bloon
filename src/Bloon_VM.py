@@ -5,13 +5,14 @@ from tools import operation_result_type
 class VirtualMachine():
     quad_queue = []
     meth_dir = {}
-    type_dir = {}
+    class_dir = {}
     mem = [None]*10000
     mem_stack = [mem]
     t_mem = []
     call_stack = []
     arguments = []
     param_refs = []
+    attribute_refs = []
     INT_START = 0
     FLOAT_START = 250
     CHAR_START = 500
@@ -27,7 +28,7 @@ class VirtualMachine():
     def __init__(self, parser, **kwargs):
         self.quad_queue = parser.quad_queue
         self.meth_dir = parser.meth_dir
-        self.type_dir = parser.type_dir
+        self.class_dir = parser.class_dir
         constants = parser.constants
         # Assign all constants to a memory address upon init
         for const_type, consts in constants.items():
@@ -69,7 +70,7 @@ class VirtualMachine():
             curr_memory[charStart + address] = value
         elif v_type == 'string':
             curr_memory[strStart + address] = value
-        elif v_type == 'custom':
+        elif v_type == 'Any':
             curr_memory[uStart + address] = address
     
     def get_value(self, address, v_type, isglobal=False, dims=False):
@@ -94,7 +95,6 @@ class VirtualMachine():
             uStart = self.localUnspecified_start[-1]
         
         if v_type == 'int':
-            # print(curr_memory[intStart + address])
             return curr_memory[intStart + address]
         elif v_type == 'float':
             return curr_memory[floatStart + address]
@@ -102,7 +102,7 @@ class VirtualMachine():
             return curr_memory[charStart + address]
         elif v_type == 'string':
             return curr_memory[strStart + address]
-        elif v_type == 'custom':
+        elif v_type == 'Any':
             return curr_memory[uStart + address]
 
     def write(self, operand):
@@ -368,13 +368,20 @@ class VirtualMachine():
         else: 
             self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal, res_op.dimensions)
     
-    def era(self, m_id):
-        localVarTable = self.meth_dir[m_id].m_vars
-        intCount = len(localVarTable['int']) + self.meth_dir[m_id].m_temps['int']
-        flCount = len(localVarTable['float']) + self.meth_dir[m_id].m_temps['float']
-        charCount = len(localVarTable['char']) + self.meth_dir[m_id].m_temps['char']
-        strCount = len(localVarTable['string']) + self.meth_dir[m_id].m_temps['string']
-        uCount = 1000 if len(localVarTable['custom']) + self.meth_dir[m_id].m_temps['custom'] > 0 else 0
+    def era(self, m_id, cl = None):
+        if cl == None:
+            localVarTable = self.meth_dir[m_id].m_vars
+            tempCounts = self.meth_dir[m_id].m_temps
+            method = self.meth_dir[m_id]
+        else:
+            localVarTable = self.class_dir[cl].methods[m_id].m_vars
+            tempCounts = self.class_dir[cl].methods[m_id].m_temps
+            method = self.class_dir[cl].methods[m_id]
+        intCount = len(localVarTable['int']) + tempCounts['int']
+        flCount = len(localVarTable['float']) + tempCounts['float']
+        charCount = len(localVarTable['char']) + tempCounts['char']
+        strCount = len(localVarTable['string']) + tempCounts['string']
+        uCount = len(localVarTable['Any']) + tempCounts['Any']
         self.localInt_start.append(0)
         self.localFloat_start.append(intCount)
         self.localChar_start.append(intCount + flCount)
@@ -385,7 +392,8 @@ class VirtualMachine():
         # Create memory with just the needed addresses
         self.mem = [None]*(intCount + flCount + charCount + strCount + uCount)
         self.messages.append("Created local memory with " + str(intCount + flCount + charCount + strCount + uCount) + " spaces.")
-        self.param_refs = self.meth_dir[m_id].m_param_addrs
+        self.param_refs = method.m_param_addrs
+        self.attribute_refs = method.m_member_addrs
     
     def param(self, arg, argNum):
         new_mem = self.mem
@@ -411,7 +419,31 @@ class VirtualMachine():
                 self.mem = self.t_mem
             self.mem = new_mem
     
-    def rtn_stmt(self, res):
+    def memberVar(self, att, attrNum):
+        new_mem = self.mem
+        l_address = self.attribute_refs[attrNum]
+        self.mem = self.t_mem
+        if att.dimensions == 0:
+            p_value = self.get_value(att.op_addr, att.op_type, att.isGlobal)
+            self.mem = new_mem
+            self.register_value(l_address, p_value, att.op_type)
+        elif att.dimensions == 1: 
+            for i in range(att.dims[0].upperLim + 1):
+                p_value = self.get_value(att.op_addr + i, att.op_type, att.isGlobal)
+                self.mem = new_mem
+                self.register_value(l_address + i, p_value, att.op_type)
+                self.mem = self.t_mem
+            self.mem = new_mem
+            
+        elif att.dimensions == 2:
+            for i in range((att.dims[0].upperLim + 1) * (att.dims[1].upperLim + 1)):
+                p_value = self.get_value(att.op_addr+i, att.op_type, att.isGlobal)
+                self.mem = new_mem
+                self.register_value(l_address + i, p_value, att.op_type)
+                self.mem = self.t_mem
+            self.mem = new_mem
+    
+    def rtn_stmt(self, res, m_type):
         val = self.get_value(res.op_addr, res.op_type, res.isGlobal)
         if val is None:
             return
@@ -423,15 +455,15 @@ class VirtualMachine():
         charStart = self.CHAR_START if len(self.mem_stack) == 2  else self.localChar_start[-1]
         strStart = self.STRING_START if len(self.mem_stack) == 2  else self.localString_start[-1]
         uStart = self.UNSPECIFIED if len(self.mem_stack) == 2  else self.localUnspecified_start[-1]
-        if res.op_type == 'int':
+        if m_type == 'int':
             curr_memory[intStart + r_addr] = int(val)
-        elif res.op_type == 'float':
+        elif m_type == 'float':
             curr_memory[flStart + r_addr] = float(val)
-        elif res.op_type == 'char':
+        elif m_type == 'char':
             curr_memory[charStart + r_addr] = val
-        elif res.op_type == 'string':
-            curr_memory[strStart + r_addr] = val
-        elif res.op_type == 'any':
+        elif m_type == 'string':
+            curr_memory[strStart + r_addr] = str(val)
+        elif m_type == 'any':
             curr_memory[uStart + r_addr] = val
 
     def run(self):
@@ -462,9 +494,11 @@ class VirtualMachine():
                     q = quad.ans
                     continue
             elif quad.operator == 'ERA':
-                self.era(quad.ans)
+                self.era(quad.ans) if quad.right_op == None else self.era(quad.ans, quad.right_op.op_id)
             elif quad.operator == 'PARAM':
                 self.param(quad.left_op, quad.ans)
+            elif quad.operator == 'MEMBERVAR':
+                self.memberVar(quad.left_op, quad.ans)
             elif quad.operator == 'GOSUB':
                 # add new memory to stack
                 self.mem_stack.append(self.mem)
@@ -474,8 +508,12 @@ class VirtualMachine():
                 q = quad.ans
                 continue
             elif quad.operator == 'RETURN':
-                self.rtn_stmt(quad.ans)
-                q = self.meth_dir[quad.right_op.op_id].m_end
+                if quad.left_op == None:
+                    self.rtn_stmt(quad.ans, self.meth_dir[quad.right_op.op_id].m_type)
+                    q = self.meth_dir[quad.right_op.op_id].m_end
+                else:
+                    self.rtn_stmt(quad.ans, self.class_dir[quad.left_op.op_id].methods[quad.right_op.op_id].m_type)
+                    q = self.class_dir[quad.left_op.op_id].methods[quad.right_op.op_id].m_end
                 continue
             elif quad.operator == 'ENDMETH':
                 # Remove local memory from the top of mem_stack

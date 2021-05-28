@@ -1,6 +1,6 @@
 program rtnMethodTest;
 
-int meth myFunction(int x); 
+int meth myFunction(int x)
 {
     return (5+x*2);
 }

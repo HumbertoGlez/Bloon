@@ -3,7 +3,7 @@ program factorialTest;
 vars
     num : int;
 
-int meth factorial(int n);
+int meth factorial(int n)
 {
     cond (n == 0) then {
         return(1);

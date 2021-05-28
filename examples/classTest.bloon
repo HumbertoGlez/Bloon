@@ -1,0 +1,19 @@
+program classTest;
+
+class student {
+    attributes:
+        weight, height : float;
+    methods:
+        int meth getIMC() {
+            return(this.weight / (this.height * this.height));
+        }
+};
+
+vars
+    juan : student;
+
+main() {
+    juan.weight = 65;
+    juan.height = 1.68;
+    write("Juan tiene un IMC de ", juan.getIMC());
+}

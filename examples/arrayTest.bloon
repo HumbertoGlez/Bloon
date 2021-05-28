@@ -5,7 +5,7 @@ vars
     floats[2,4] : float;
     strs[5,5] : string;
 
-void meth arrays(int i[4], float f[2, 4], string texto[5,5]);
+void meth arrays(int i[4], float f[2, 4], string texto[5,5])
 {
     write(i[0], ", ", f[0, 3]);
     write(i[2] + f[1, 2]);
