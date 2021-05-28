@@ -1,0 +1,17 @@
+program fibonacciTest;
+
+vars
+    i : int;
+
+int meth fibonacci(int n);
+{
+    cond (n <= 1) then {
+        return (n);
+    }
+    return (fibonacci(n-1) + fibonacci(n-2));
+}
+
+main() {
+    i = 9;
+    write(fibonacci(i));
+}

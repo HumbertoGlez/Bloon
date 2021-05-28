@@ -18,6 +18,7 @@ class Method:
     m_param_addrs: List[int] = attr.ib(attr.Factory(list))
     m_param_types: List[str] = attr.ib(attr.Factory(list))
     m_start: int = attr.ib(0)
+    m_end: int = attr.ib(0)
     m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'custom': 0}
     m_temp_count: int = attr.ib(0)
     def get_address(self, v_type):
@@ -78,6 +79,7 @@ class Compiler:
     constants = {'int': {}, 'float': {}, 'string': {}, 'char': {}}
     upperLimits = []
     negative = False
+    floop_stack = deque()
 
     def define_method(self, method_type, method_id):
         if  method_id in self.meth_dir:
@@ -89,6 +91,7 @@ class Compiler:
 
     def process_method(self):
         self.quad_queue.append(Quadruple("ENDMETH"))
+        self.meth_dir[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
         self.method_stack.pop()
         
     def define_param(self, param_type, param_id, param_dim = False):
@@ -268,6 +271,9 @@ class Compiler:
 
     def get_var(self):
         id = self.operand_stack.pop().op_id
+        if self.negative:
+            id = f'-{id}'
+            self.negative = False
         #We first check in the current scope
         myVariables = self.meth_dir[self.method_stack[-1]].m_vars
         for vType, varDir in myVariables.items():
@@ -338,6 +344,9 @@ class Compiler:
         return address
 
     def get_const(self, const_id, const_type):
+        if self.negative:
+            const_id = f'-{const_id}'
+            self.negative = False
         dir = self.get_var_dir(const_type, isGlobal=True)
         if const_id not in dir:
             address = self.add_const(const_id, const_type)
@@ -350,7 +359,7 @@ class Compiler:
     
     def rtn_stmt(self):
         rtn_op = self.operand_stack.pop()
-        self.quad_queue.append(Quadruple("RETURN", None, None, rtn_op))
+        self.quad_queue.append(Quadruple("RETURN", None, Operand(f'{self.method_stack[-1]}'), rtn_op))
 
     def verify_method(self, id):
         if id not in self.meth_dir:
@@ -431,15 +440,15 @@ class Compiler:
             raise Exception("Unexpected type for floop loop expression, expected integer")
         else:
             # We dont pop the variable to increase its value later on at the end of iteration
-            var = self.operand_stack[-1]
-            result_type = operation_result_type(var.op_type, exp.op_type, '<=')
+            self.floop_stack.append(self.operand_stack.pop())
+            result_type = operation_result_type(self.floop_stack[-1].op_type, exp.op_type, '<=')
             method_id = self.method_stack[-1]
             method = self.meth_dir[method_id]
             address = method.get_address(result_type)
             res_op = Operand(f't{method.m_temp_count}', result_type, address, method_id == 'global')
 
             self.operand_stack.append(res_op)
-            self.quad_queue.append(Quadruple('<=', var, exp, res_op))
+            self.quad_queue.append(Quadruple('<=', self.floop_stack[-1], exp, res_op))
             method.m_temp_count += 1
             method.m_temps[result_type] += 1
             # Set goto for the quadruple where the loop condition is done
@@ -454,7 +463,7 @@ class Compiler:
     def floop_end(self):
         false_quad = self.gotos.pop()
         compare_quad = self.gotos.pop()
-        var = self.operand_stack[-1]
+        var = self.floop_stack.pop()
         # special quadruple to add 1 to the given operand
         self.quad_queue.append(Quadruple("+_1", var, None, var))
         self.quad_queue.append(Quadruple("GOTO", ans=compare_quad))

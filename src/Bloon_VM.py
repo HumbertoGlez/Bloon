@@ -94,6 +94,7 @@ class VirtualMachine():
             uStart = self.localUnspecified_start[-1]
         
         if v_type == 'int':
+            # print(curr_memory[intStart + address])
             return curr_memory[intStart + address]
         elif v_type == 'float':
             return curr_memory[floatStart + address]
@@ -311,6 +312,7 @@ class VirtualMachine():
                 elif left.op_type == 'float':
                     return left_v == ord(right_v)
             else:
+                # print (left_v, " == ", right_v, " = ", left_v == right_v)
                 return left_v == right_v
         elif op == 'ne':
             if type_left_char:
@@ -390,7 +392,7 @@ class VirtualMachine():
         p_local_address = self.param_refs[argNum]
         self.mem = self.t_mem
         if arg.dimensions == 0:
-            p_value = self.get_value(arg.op_addr, arg.op_type) 
+            p_value = self.get_value(arg.op_addr, arg.op_type, arg.isGlobal) 
             self.mem = new_mem
             self.register_value(p_local_address, p_value, arg.op_type)
         elif arg.dimensions == 1: 
@@ -459,18 +461,22 @@ class VirtualMachine():
                 if value == False:
                     q = quad.ans
                     continue
-            elif quad.operator == 'PARAM':
-                self.param(quad.left_op, quad.ans)
             elif quad.operator == 'ERA':
                 self.era(quad.ans)
+            elif quad.operator == 'PARAM':
+                self.param(quad.left_op, quad.ans)
             elif quad.operator == 'GOSUB':
+                # add new memory to stack
                 self.mem_stack.append(self.mem)
+                # clear param refs
                 self.param_refs = []
                 self.call_stack.append(q + 1)
                 q = quad.ans
                 continue
             elif quad.operator == 'RETURN':
                 self.rtn_stmt(quad.ans)
+                q = self.meth_dir[quad.right_op.op_id].m_end
+                continue
             elif quad.operator == 'ENDMETH':
                 # Remove local memory from the top of mem_stack
                 self.mem_stack.pop()
@@ -515,7 +521,7 @@ class VirtualMachine():
             q += 1
         
         print("\nFinished execution...")
-        if len(self.messages) > 0:
-            print("Important execution logs:")
-        for i in range(len(self.messages)):
-            print(self.messages[i])
+        # if len(self.messages) > 0:
+        #     print("Important execution logs:")
+        # for i in range(len(self.messages)):
+        #     print(self.messages[i])

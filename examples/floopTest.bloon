@@ -1,11 +1,18 @@
 program Team_pp;
 
 vars
-    i : int;
+    j, i : int;
+
 
 main (){
-    i = 1;
-    floop i to 10 do {
-        write("HelloWorld");
+    i = 0;
+    j = 0;
+    floop i to 5 do {
+        floop j to 5 do {
+            write("j ", j);
+        }
+        j = 0;
+        write("i ", i);
     }
+    write("i ", i);
 }
