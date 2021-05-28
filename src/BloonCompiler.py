@@ -40,7 +40,6 @@ class Attribute:
 class MyClass:
     c_id: str = attr.ib()
     attributes: Dict[str, Attribute] = attr.ib(attr.Factory(dict))
-    # attributes: List[any] = attr.ib(attr.Factory(list))
     methods: Dict[str, Method] = attr.ib(attr.Factory(dict))
 
 @attr.s
@@ -190,7 +189,7 @@ class Compiler:
     def define_method(self, method_type, method_id, isClass = False):
         if method_type not in self.basicTypes and method_type not in self.class_dir and method_type != 'void':
             raise Exception("Invalid return type for method {}".format(method_id))
-        elif method_type not in self.basicTypes:
+        elif method_type not in self.basicTypes and method_type != 'void':
             mt = method_type
             method_type = 'Any'
 
@@ -281,7 +280,7 @@ class Compiler:
         if var_type not in self.basicTypes and var_type in self.class_dir:
             var_type = 'Any'
         method_id =  "global" if isGlobal else self.method_stack[-1]
-        method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
+        method = self.meth_dir[method_id] if not self.methodLoc_stack[-1] or method_id == 'global' else self.class_dir[self.class_stack[-1]].methods[method_id]
         var_dir = method.m_vars[var_type]
         return var_dir
 
@@ -598,8 +597,10 @@ class Compiler:
                 self.quad_queue.append(Quadruple("ERA", ans=id))
             else:
                 self.quad_queue.append(Quadruple("ERA", None, Operand(cl), ans=id))
+                print(method.m_param_count)
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
+                print(argument.op_type, " ", argument.op_id, ", ", method.m_param_types[method.m_param_count - 1 - i])
                 if argument.op_type == method.m_param_types[method.m_param_count -1 - i]:
                     self.quad_queue.append(Quadruple("PARAM", argument, None, method.m_param_count -1 - i))
                 else:

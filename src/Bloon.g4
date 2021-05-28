@@ -33,21 +33,13 @@ r_class: 'class' ID {compi.add_operand($ID.text)} class_t;
 class_t: '<' 'inherits' ID '>' {compi.add_operand($ID.text); compi.define_class(True)} class_k | {compi.define_class()} class_k;
 class_k: '{' ( 'attributes' ':' class_att | class_l ); 
 class_att: (ID {compi.add_operand($ID.text); compi.increase_varCount()} | ID '[' CONST_INT {compi.add_limit($CONST_INT.text)} (',' CONST_INT {compi.add_limit($CONST_INT.text)} ']' {compi.add_operand($ID.text, 2);} | ']' {compi.add_operand($ID.text, 1)}) {compi.increase_varCount()}) (',' class_att | ':' var_type {compi.define_attr($var_type.text)} ';' (class_att | class_l) );
-class_l: 'methods' ':' class_p | '}' ';';
+class_l: 'methods' ':' class_p | '}' ';' {compi.end_class()};
 class_p: class_func '}' ';' {compi.end_class()} | class_func class_p;
 
 class_func: type_meth 'meth' ID {compi.define_method($type_meth.text, $ID.text, True)} '(' {compi.open_parens()} c_func_t;
 c_func_t: param c_func_k | c_func_k;
 c_func_k: ')' {compi.close_parens()} c_func_p;
 c_func_p: var_dec block {compi.process_method()} | block {compi.process_method()};
-
-// c_param: 
-//         var_type ID {compi.define_param($var_type.text, $ID.text)} param_t 
-//         | var_type ID ('[' CONST_INT ']' {compi.add_limit($CONST_INT.text); compi.define_param($var_type.text, $ID.text, 1)} | '[' CONST_INT {compi.add_limit($CONST_INT.text)} ',' CONST_INT {compi.add_limit($CONST_INT.text)} ']'  {compi.define_param($var_type.text, $ID.text, 2)}) param_t
-//         | custom_type ID {compi.define_param($custom_type.text, $ID.text)} param_t
-//         | custom_type ID ('[' CONST_INT ']' {compi.add_limit($CONST_INT.text); compi.define_param($custom_type.text, $ID.text, 1)} | '[' CONST_INT {compi.add_limit($CONST_INT.text)} ',' CONST_INT {compi.add_limit($CONST_INT.text)} ']'  {compi.define_param($custom_type.text, $ID.text, 2)}) param_t;
-// param_t: ',' param | ;
-
 
 var: ID {compi.add_operand($ID.text)} var_t;
 var_t: arr_idx | arr_idx '.' var {compi.get_var(True)} | '.' ID {compi.add_operand($ID.text); compi.get_var(True)} | {compi.get_var()};

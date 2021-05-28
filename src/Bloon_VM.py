@@ -508,6 +508,7 @@ class VirtualMachine():
                 q = quad.ans
                 continue
             elif quad.operator == 'RETURN':
+                # Check if method is from a class
                 if quad.left_op == None:
                     self.rtn_stmt(quad.ans, self.meth_dir[quad.right_op.op_id].m_type)
                     q = self.meth_dir[quad.right_op.op_id].m_end
@@ -528,6 +529,12 @@ class VirtualMachine():
                 self.mem = self.mem_stack[-1]
                 self.messages.append("Removed local memory.")
                 continue
+            elif quad.operator == 'VERIFY':
+                index = self.get_value(quad.left_op.op_addr, quad.left_op.op_type, quad.left_op.isGlobal)
+                lower_lim = quad.right_op
+                upper_lim = quad.ans
+                if index < lower_lim or index > upper_lim:
+                    raise Exception(f'Index out of bounds.')
             elif quad.operator == '+':
                 self.do_operation('add', quad) 
             elif quad.operator == '-':
