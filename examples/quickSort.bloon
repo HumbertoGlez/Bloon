@@ -1,0 +1,55 @@
+program quickSort;
+vars
+    arr[10], n, i : int;
+
+void meth printArray(int arr[10]) 
+vars
+    i : int;
+{
+    i = 0;
+    floop i to 9 do {
+        write(arr[i]);
+    }
+}
+
+void meth quickSort(int number[10], int first, int last)
+vars
+    i, j, pivot, temp : int;
+{
+    cond (first < last) then {
+        pivot = first;
+        i = first;
+        j = last;
+
+        while (i < j) do {
+            while(number[i] <= number[pivot] and i < last) do {
+                i += 1;
+            }
+            while (number[j] > number[pivot]) do {
+                j -= 1;
+            }
+            cond (i < j) then {
+                temp = number[i];
+                number[i] = number[j];
+                number[j] = temp;
+            }
+        }
+
+        temp = number[pivot];
+        number[pivot] = number[j];
+        number[j] = temp;
+        quickSort(number, first, j-1);
+        quickSort(number, j+1, last);
+    }
+}
+
+main() {
+    n = 10;
+    i = 0;
+    floop i to n-1 do {
+        read(arr[i]);
+    }
+    quickSort(arr, 0, n-1);
+    write("Sorted array");
+    printArray(arr);
+}

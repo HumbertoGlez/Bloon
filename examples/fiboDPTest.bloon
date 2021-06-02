@@ -1,0 +1,27 @@
+program fiboDPTest;
+
+vars
+    n : int;
+
+int meth fib(int n)
+vars
+    a, b, c, i : int;
+{
+    a = 0;
+    b = 1;
+    cond (n == 0) then {
+        return(a);
+    }
+    i = 2;
+    floop i to n do {
+        c = a + b;
+        a = b;
+        b = c;
+    }
+    return (b);
+} 
+
+main() {
+    read(n);
+    write(fib(n));
+}

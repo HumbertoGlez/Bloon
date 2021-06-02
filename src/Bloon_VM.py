@@ -1,5 +1,7 @@
 from collections import deque
 
+import attr
+
 from tools import operation_result_type
 
 class VirtualMachine():
@@ -11,6 +13,7 @@ class VirtualMachine():
     t_mem = []
     call_stack = []
     arguments = []
+    param_addrs = []
     param_refs = []
     attribute_refs = []
     INT_START = 0
@@ -41,7 +44,7 @@ class VirtualMachine():
                     value = str(value)
                 self.register_value(address, value, const_type, True)
     
-    def register_value(self, address, value, v_type, isglobal=False, dims=False):
+    def register_value(self, address, value, v_type, isglobal=False, isRef=False, memRef=False):
         intStart = 0
         floatStart = 0
         charStart = 0
@@ -62,18 +65,54 @@ class VirtualMachine():
             strStart = self.localString_start[-1]
             uStart = self.localUnspecified_start[-1]
         
-        if v_type == 'int':
-            curr_memory[intStart + address] = value
-        elif v_type == 'float':
-            curr_memory[floatStart + address] = value
-        elif v_type == 'char':
-            curr_memory[charStart + address] = value
-        elif v_type == 'string':
-            curr_memory[strStart + address] = value
-        elif v_type == 'Any':
-            curr_memory[uStart + address] = address
-    
-    def get_value(self, address, v_type, isglobal=False, dims=False):
+        if type(address) is int:
+            if v_type == 'int':
+                curr_memory[intStart + address] = value
+            elif v_type == 'float':
+                # print("assigned ", value, " to ", floatStart+address)
+                curr_memory[floatStart + address] = value
+            elif v_type == 'char':
+                curr_memory[charStart + address] = value
+            elif v_type == 'string':
+                # print("assigned ", value, " to ", strStart+address)
+                curr_memory[strStart + address] = value
+            elif v_type == 'Any':
+                curr_memory[uStart + address] = address
+        else:
+            if v_type == 'int':
+                curr_memory[intStart + self.get_value(address.op_addr, 'int', address.isGlobal)] = value
+            elif v_type == 'float':
+                curr_memory[floatStart + self.get_value(address.op_addr, 'int', address.isGlobal)] = value
+            elif v_type == 'char':
+                curr_memory[charStart + self.get_value(address.op_addr, 'int', address.isGlobal)] = value
+            elif v_type == 'string':
+                curr_memory[strStart + self.get_value(address.op_addr, 'int', address.isGlobal)] = value
+            elif v_type == 'Any':
+                curr_memory[uStart + self.get_value(address.op_addr, 'int', address.isGlobal)] = address
+
+        if isRef:
+            memRef = self.get_value(memRef.op_addr, memRef.op_type, memRef.isGlobal)
+            curr_memory = self.mem_stack[memRef]
+            intStart = self.INT_START if len(self.mem_stack) == 2 else self.localInt_start[memRef]
+            floatStart = self.FLOAT_START if len(self.mem_stack) == 2 else self.localFloat_start[memRef]
+            charStart = self.CHAR_START if len(self.mem_stack) == 2 else self.localChar_start[memRef]
+            strStart = self.STRING_START if len(self.mem_stack) == 2 else self.localString_start[memRef]
+            uStart = self.UNSPECIFIED if len(self.mem_stack) == 2 else self.localUnspecified_start[memRef]
+
+            if v_type == 'int':
+                curr_memory[intStart + self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)] = value
+            elif v_type == 'float':
+                # print("assigned ", value, " to ", floatStart+address)
+                curr_memory[floatStart + self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)] = value
+            elif v_type == 'char':
+                curr_memory[charStart + self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)] = value
+            elif v_type == 'string':
+                # print("assigned ", value, " to ", strStart+address)
+                curr_memory[strStart + self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)] = value
+            elif v_type == 'Any':
+                curr_memory[uStart + self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)] = self.get_value(isRef.op_addr, isRef.op_type, isRef.isGlobal)
+
+    def get_value(self, address, v_type, isglobal=False, dims=False, older=False):
         intStart = 0
         floatStart = 0
         charStart = 0
@@ -86,24 +125,49 @@ class VirtualMachine():
             charStart = self.CHAR_START
             strStart = self.STRING_START
             uStart = self.UNSPECIFIED
-        else:
+        elif not older:
             curr_memory = self.mem
             intStart = self.localInt_start[-1]
             floatStart = self.localFloat_start[-1]
             charStart = self.localChar_start[-1]
             strStart = self.localString_start[-1]
             uStart = self.localUnspecified_start[-1]
+        else:
+            curr_memory = self.mem
+            intStart = self.localInt_start[-2]
+            floatStart = self.localFloat_start[-2]
+            charStart = self.localChar_start[-2]
+            strStart = self.localString_start[-2]
+            uStart = self.localUnspecified_start[-2]
         
-        if v_type == 'int':
-            return curr_memory[intStart + address]
-        elif v_type == 'float':
-            return curr_memory[floatStart + address]
-        elif v_type == 'char':
-            return curr_memory[charStart + address]
-        elif v_type == 'string':
-            return curr_memory[strStart + address]
-        elif v_type == 'Any':
-            return curr_memory[uStart + address]
+        if type(address) is int:
+            if v_type == 'int':
+                return curr_memory[intStart + address]
+            elif v_type == 'float':
+                # print(floatStart + address, " has the value: ", curr_memory[floatStart + address])
+                return curr_memory[floatStart + address]
+            elif v_type == 'char':
+                return curr_memory[charStart + address]
+            elif v_type == 'string':
+                # print( address, " has the value: ", curr_memory[strStart + address])
+                return curr_memory[strStart + address]
+            elif v_type == 'Any':
+                return curr_memory[uStart + address]
+        else:
+            if v_type == 'int':
+                # print("value =",curr_memory[intStart + self.get_value(address.op_addr, 'int', address.isGlobal)])
+                # print(intStart + self.get_value(address.op_addr, 'int', address.isGlobal))
+                return curr_memory[intStart + self.get_value(address.op_addr, 'int', address.isGlobal)]
+            elif v_type == 'float':
+                # print("value =",curr_memory[floatStart + self.get_value(address.op_addr, 'int', address.isGlobal)])
+                return curr_memory[floatStart + self.get_value(address.op_addr, 'int', address.isGlobal)]
+            elif v_type == 'char':
+                return curr_memory[charStart + self.get_value(address.op_addr, 'int', address.isGlobal)]
+            elif v_type == 'string':
+                return curr_memory[strStart + self.get_value(address.op_addr, 'int', address.isGlobal)]
+            elif v_type == 'Any':
+                return curr_memory[uStart + self.get_value(address.op_addr, 'int', address.isGlobal)]
+
 
     def write(self, operand):
         value = self.get_value(operand.op_addr, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.get_value(operand.op_addr, operand.op_type, operand.isGlobal, operand.dimensions)
@@ -118,17 +182,17 @@ class VirtualMachine():
                     if operand.dimensions == 0:
                         self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) 
                     else: 
-                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, operand.dimensions)
+                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
                 except ValueError:
                     raise Exception(f"Invalid input to read for variable of type {operand.op_type}")
             elif operand.op_type == 'float':
                 try:
                     val = float(value)
-                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, operand.dimensions)
+                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) if not operand.isRef else self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
                 except ValueError:
                     raise Exception(f"Invalid input to read for variable of type {operand.op_type}")
         else:
-            self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal) if operand.dimensions == 0 else self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal, operand.dimensions)
+            self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal) if not  operand.isRef else self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
 
     def operation(self, left, right, op):
         # CHECK FOR TYPE
@@ -140,9 +204,9 @@ class VirtualMachine():
 
         left_v = None
         right_v = None
-        # print(left.op_id + ', ' + right.op_id)
+        # print(left.op_id , ', ', right.op_id)
         if left.op_addr == None and left.op_type == 'int':
-            left_v = int(float(right.op_id))
+            left_v = int(float(left.op_id))
         elif left.dimensions == 0:
             left_v = self.get_value(left.op_addr, left.op_type, left.isGlobal) 
         else:
@@ -154,7 +218,7 @@ class VirtualMachine():
             right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal) 
         else:
             right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal, right.dimensions)
-
+        # print("l: ",left_v, "r: ", right_v)
         if left_v == None:
             raise Exception(f'Undefined variable: {left.op_id}')
         elif right_v == None:
@@ -363,10 +427,26 @@ class VirtualMachine():
             ans = float(self.operation(left_op, right_op, op))
         else:
             ans = self.operation(left_op, right_op, op)
+        # print(op, left_op, right_op, " = ", ans)
         if res_op.dimensions == 0:
             self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal)
         else: 
-            self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal, res_op.dimensions)
+            self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal, isRef=res_op.isRef, memRef=res_op.refAmount)
+    
+    def do_logical(self, op, quad):
+        left_op = quad.left_op
+        res_op = quad.ans
+        if op == 'AND':
+            right_op = quad.right_op
+            ans = int(self.get_value(left_op.op_addr, left_op.op_type, left_op.isGlobal) and self.get_value(right_op.op_addr, right_op.op_type, right_op.isGlobal))
+        elif op == 'OR':
+            right_op = quad.right_op
+            ans = int(self.get_value(left_op.op_addr, left_op.op_type, left_op.isGlobal) or self.get_value(right_op.op_addr, right_op.op_type, right_op.isGlobal))
+        elif op == 'NOT':
+            ans = int(not self.get_value(left_op.op_addr, left_op.op_type, left_op.isGlobal))
+        else:
+            raise Exception("Invalid operation type")
+        self.register_value(res_op.op_addr, ans, res_op.op_type, res_op.isGlobal, isRef=res_op.isRef, memRef=res_op.refAmount)
     
     def era(self, m_id, cl = None):
         if cl == None:
@@ -382,6 +462,8 @@ class VirtualMachine():
         charCount = len(localVarTable['char']) + tempCounts['char']
         strCount = len(localVarTable['string']) + tempCounts['string']
         uCount = len(localVarTable['Any']) + tempCounts['Any']
+        if intCount + flCount + charCount + strCount + uCount > 10000:
+            raise Exception(f'Stack overflow, memory limit exceeded for method {m_id}')
         self.localInt_start.append(0)
         self.localFloat_start.append(intCount)
         self.localChar_start.append(intCount + flCount)
@@ -392,54 +474,79 @@ class VirtualMachine():
         # Create memory with just the needed addresses
         self.mem = [None]*(intCount + flCount + charCount + strCount + uCount)
         self.messages.append("Created local memory with " + str(intCount + flCount + charCount + strCount + uCount) + " spaces.")
-        self.param_refs = method.m_param_addrs
+        self.param_addrs = method.m_param_addrs
+        self.param_refs = method.m_param_refs
         self.attribute_refs = method.m_member_addrs
     
     def param(self, arg, argNum):
         new_mem = self.mem
-        p_local_address = self.param_refs[argNum]
+        p_local_address = self.param_addrs[argNum]
         self.mem = self.t_mem
         if arg.dimensions == 0:
-            p_value = self.get_value(arg.op_addr, arg.op_type, arg.isGlobal) 
+            p_value = self.get_value(arg.op_addr, arg.op_type, arg.isGlobal, older=True) 
             self.mem = new_mem
             self.register_value(p_local_address, p_value, arg.op_type)
-        elif arg.dimensions == 1: 
-            for i in range(arg.dims[0].upperLim + 1):
-                p_value = self.get_value(arg.op_addr + i, arg.op_type, arg.isGlobal)
+        elif arg.dimensions == 1:
+            self.mem = new_mem
+            self.register_value(self.param_refs[argNum][0], arg.op_addr, 'int')
+            if arg.refAmount:
+                self.mem = self.t_mem
+                amount = self.get_value(arg.refAmount.op_addr, arg.refAmount.op_type, arg.refAmount.isGlobal)
+                # print("Saved ref to:",amount)
                 self.mem = new_mem
-                self.register_value(p_local_address + i, p_value, arg.op_type)
+                self.register_value(self.param_refs[argNum][1], amount, 'int')
+            else:
+                # print("Saved ref to:",self.mem_stack.index(self.t_mem))
+                self.register_value(self.param_refs[argNum][1], self.mem_stack.index(self.t_mem), 'int')
+            self.mem = self.t_mem
+            for i in range(arg.dims[0].upperLim + 1):
+                p_value = self.get_value(arg.op_addr + i, arg.op_type, arg.isGlobal, older=True)
+                self.mem = new_mem
+                self.register_value(p_local_address[i], p_value, arg.op_type)
                 self.mem = self.t_mem
             self.mem = new_mem
-            
         elif arg.dimensions == 2:
-            for i in range((arg.dims[0].upperLim + 1) * (arg.dims[1].upperLim + 1)):
-                p_value = self.get_value(arg.op_addr+i, arg.op_type, arg.isGlobal)
+            self.mem = new_mem
+            self.register_value(self.param_refs[argNum][0], arg.op_addr, 'int')
+            if arg.refAmount:
+                self.mem = self.t_mem
+                amount = self.get_value(arg.refAmount.op_addr, arg.refAmount.op_type, arg.refAmount.isGlobal)
+                # print("Saved ref to:",amount)
                 self.mem = new_mem
-                self.register_value(p_local_address + i, p_value, arg.op_type)
+                self.register_value(self.param_refs[argNum][1], amount, 'int')
+            else:
+                # print("Saved ref to:",self.mem_stack.index(self.t_mem))
+                self.register_value(self.param_refs[argNum][1], self.mem_stack.index(self.t_mem), 'int')
+            self.mem = self.t_mem
+            for i in range((arg.dims[0].upperLim + 1) * (arg.dims[1].upperLim + 1)):
+                p_value = self.get_value(arg.op_addr+i, arg.op_type, arg.isGlobal, older=True)
+                self.mem = new_mem
+                self.register_value(p_local_address[i], p_value, arg.op_type)
                 self.mem = self.t_mem
             self.mem = new_mem
     
-    def memberVar(self, att, attrNum):
+    def memberVar(self, att, l_address):
         new_mem = self.mem
-        l_address = self.attribute_refs[attrNum]
+        # l_address = self.attribute_refs[attrNum]
         self.mem = self.t_mem
+
         if att.dimensions == 0:
-            p_value = self.get_value(att.op_addr, att.op_type, att.isGlobal)
+            p_value = self.get_value(att.op_addr, att.op_type, att.isGlobal, older=True)
             self.mem = new_mem
             self.register_value(l_address, p_value, att.op_type)
-        elif att.dimensions == 1: 
+        elif att.dimensions == 1:
             for i in range(att.dims[0].upperLim + 1):
-                p_value = self.get_value(att.op_addr + i, att.op_type, att.isGlobal)
+                p_value = self.get_value(att.op_addr + i, att.op_type, att.isGlobal, older=True)
                 self.mem = new_mem
-                self.register_value(l_address + i, p_value, att.op_type)
+                self.register_value(l_address[i], p_value, att.op_type)
                 self.mem = self.t_mem
             self.mem = new_mem
             
         elif att.dimensions == 2:
             for i in range((att.dims[0].upperLim + 1) * (att.dims[1].upperLim + 1)):
-                p_value = self.get_value(att.op_addr+i, att.op_type, att.isGlobal)
+                p_value = self.get_value(att.op_addr+i, att.op_type, att.isGlobal, older=True)
                 self.mem = new_mem
-                self.register_value(l_address + i, p_value, att.op_type)
+                self.register_value(l_address[i], p_value, att.op_type)
                 self.mem = self.t_mem
             self.mem = new_mem
     
@@ -477,7 +584,7 @@ class VirtualMachine():
                 value_op = quad.left_op
                 value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal) if value_op.dimensions == 0 else self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal, value_op.dimensions)
                 result = quad.ans
-                self.register_value(result.op_addr, value, result.op_type, result.isGlobal) if result.dimensions == 0 else self.register_value(result.op_addr, value, result.op_type, result.isGlobal, result.dimensions)
+                self.register_value(result.op_addr, value, result.op_type, result.isGlobal) if not result.isRef else self.register_value(result.op_addr, value, result.op_type, result.isGlobal, isRef=result.isRef, memRef=result.refAmount)
             elif quad.operator == 'WRITE':
                 self.write(quad.ans)
             elif quad.operator == 'NEWLINE':
@@ -503,7 +610,9 @@ class VirtualMachine():
                 # add new memory to stack
                 self.mem_stack.append(self.mem)
                 # clear param refs
+                self.param_addrs = []
                 self.param_refs = []
+                self.attribute_refs = []
                 self.call_stack.append(q + 1)
                 q = quad.ans
                 continue
@@ -518,6 +627,8 @@ class VirtualMachine():
                 continue
             elif quad.operator == 'ENDMETH':
                 # Remove local memory from the top of mem_stack
+                # for i in self.mem_stack[-1]:
+                #     print(i)
                 self.mem_stack.pop()
                 self.localInt_start.pop()
                 self.localFloat_start.pop()
@@ -533,8 +644,15 @@ class VirtualMachine():
                 index = self.get_value(quad.left_op.op_addr, quad.left_op.op_type, quad.left_op.isGlobal)
                 lower_lim = quad.right_op
                 upper_lim = quad.ans
+                # print(index)
                 if index < lower_lim or index > upper_lim:
-                    raise Exception(f'Index out of bounds.')
+                    raise Exception(f'Index {index} out of bounds {lower_lim}, {upper_lim}.')
+            elif quad.operator == 'AND':
+                self.do_logical('AND', quad)
+            elif quad.operator == 'OR':
+                self.do_logical('OR', quad)
+            elif quad.operator == 'NOT':
+                self.do_logical('NOT', quad)
             elif quad.operator == '+':
                 self.do_operation('add', quad) 
             elif quad.operator == '-':
@@ -562,7 +680,7 @@ class VirtualMachine():
                 value = self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal) if value_op.dimensions == 0 else self.get_value(value_op.op_addr, value_op.op_type, value_op.isGlobal, value_op.dimensions)
                 value += 1
                 ans_op = quad.ans
-                self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal) if ans_op.dimensions == 0 else self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal, ans_op.dimensions)
+                self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal) if not ans_op.isRef else self.register_value(ans_op.op_addr, value, ans_op.op_type, ans_op.isGlobal, isRef=ans_op.isRef, memRef=ans_op.refAmount)
             q += 1
         
         print("\nFinished execution...")

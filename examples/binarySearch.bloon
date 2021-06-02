@@ -1,0 +1,71 @@
+program binarySearch;
+vars
+    arr[10], x, n, result, i : int;
+
+int meth check(int arr[10], int dig, int k)
+vars
+    ele : int;
+{
+    ele = arr[dig];
+    cond (k <= ele) then {
+        return (1);
+    }
+    else {
+        return (0);
+    }
+}
+
+int meth binarySearchAux(int arr[10], int l, int h, int x)
+vars
+    mid : int;
+{
+    while (l < h) do {
+        mid = (l + h) / 2;
+        cond (check(arr, mid, x)) then {
+            h = mid;
+        }
+        else {
+            l = mid+1;
+        }
+    }
+    cond(arr[l] == x) then {
+        return (l);
+    }
+    else {
+        return (-1);
+    }
+}
+int meth binarySearch(int arr[10], int l, int n, int x)
+vars
+    i, j, temp : int;
+{
+    i = 0;
+    floop i to n - 1 do {
+        j = 0;
+        floop j to n-i-1 do {
+            cond (arr[j] > arr[j+1]) then {
+                temp = arr[j];
+                arr[j] = arr[j+1];
+                arr[j+1] = temp;
+            }
+        }
+    }
+    return (binarySearchAux(arr, l, n, x));
+}
+
+main () {
+    i = 0;
+    n = 10;
+    floop i to n-1 do {
+        read(arr[i]);
+    } 
+    write("What value do you wish to search for?");
+    read(x);
+    result = binarySearch(arr, 0, n-1, x);
+    cond (result == -1) then {
+        write("Element not found in array");
+    }
+    else {
+        write("Element found at index: ", result);
+    }
+}

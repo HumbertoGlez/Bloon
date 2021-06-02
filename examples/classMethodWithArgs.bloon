@@ -1,4 +1,4 @@
-program classTest;
+program classMethodWithArgsTest;
 
 class persona {
     attributes:
@@ -14,6 +14,7 @@ class student <inherits persona> {
         edad : int;
     methods:
         void meth printDatos() {
+            this.nombre = "kulo";
             write("Nombre: ", this.nombre);
             write("Edad: ", this.edad);
             write("Peso: ", this.weight);
@@ -33,4 +34,5 @@ main() {
     write("Juan tiene un IMC de ", juan.getIMC(juan.weight, juan.height));
     write(juan.nombre, " tiene ", juan.edad, " anios.");
     juan.printDatos();
+    write(juan.nombre);
 }

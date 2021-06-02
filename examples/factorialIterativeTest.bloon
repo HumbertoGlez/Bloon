@@ -1,0 +1,21 @@
+program factorialIterativeTest;
+
+vars
+    num : int;
+
+int meth factorial(int n)
+vars
+    res, i : int;
+{
+    res = 1;
+    i = 2;
+    floop i to n do {
+        res *= i;
+    } 
+    return (res);
+}
+
+main() {
+    read(num);
+    write("factorial de ", num, " es ", factorial(num));
+}

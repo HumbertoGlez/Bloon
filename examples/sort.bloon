@@ -1,0 +1,44 @@
+program sort;
+
+vars
+    arr[10], n, i : int;
+
+
+void meth printArray(int arr[10], int size) 
+vars
+    i : int;
+{
+    i = 0;
+    floop i to size - 1 do {
+        write(arr[i]);
+    }
+}
+
+void meth bubbleSort(int arr[10], int n)
+vars
+    i, j, temp : int;
+{
+    i = 0;
+    floop i to n-1 do {
+        j = 0;
+        floop j to n-i-1 do {
+            cond (arr[j] > arr[j+1]) then {
+                temp = arr[j];
+                arr[j] = arr[j+1];
+                arr[j+1] = temp;
+            }
+        }
+    }
+    write("Sorted array:");
+    printArray(arr, n + 1);
+}
+main() {
+    n = 10;
+    i = 0;
+    floop i to n - 1 do {
+        read(arr[i]);
+    }
+    bubbleSort(arr, n-1);
+    
+
+}

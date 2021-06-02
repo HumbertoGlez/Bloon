@@ -1,0 +1,22 @@
+program andOrTest;
+
+main() {
+    cond(3 and 3 and 4) then {
+        write("its true");
+    }
+    else{
+        write("its false");
+    }
+    cond(0 or 0 or 0) then {
+        write("its true");
+    }
+    else {
+        write("its false");
+    }
+    cond(!8 < 4 and !9>10 and !5 == 4) then {
+        write("its true");
+    }
+    else{
+        write("its false");
+    }
+}

@@ -1,0 +1,37 @@
+program classMethodOnlyAttributesTest;
+
+class persona {
+    attributes:
+        weight, height : float;
+    methods:
+        int meth getIMC() {
+            return(this.weight / (this.height * this.height));
+        }
+};
+class student <inherits persona> {
+    attributes:
+        nombre : string;
+        edad : int;
+    methods:
+        void meth printDatos() {
+            this.nombre = "kulo";
+            write("Nombre: ", this.nombre);
+            write("Edad: ", this.edad);
+            write("Peso: ", this.weight);
+            write("Altura: ", this.height);
+            write("IMC: ", this.getIMC());
+        }
+};
+
+vars
+    juan : student;
+
+main() {
+    juan.weight = 65;
+    juan.height = 1.68;
+    juan.nombre = "Juan";
+    juan.edad = 22;
+    write("Juan tiene un IMC de ", juan.getIMC());
+    write(juan.nombre, " tiene ", juan.edad, " anios.");
+    juan.printDatos();
+}

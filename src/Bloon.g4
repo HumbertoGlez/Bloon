@@ -33,7 +33,7 @@ r_class: 'class' ID {compi.add_operand($ID.text)} class_t;
 class_t: '<' 'inherits' ID '>' {compi.add_operand($ID.text); compi.define_class(True)} class_k | {compi.define_class()} class_k;
 class_k: '{' ( 'attributes' ':' class_att | class_l ); 
 class_att: (ID {compi.add_operand($ID.text); compi.increase_varCount()} | ID '[' CONST_INT {compi.add_limit($CONST_INT.text)} (',' CONST_INT {compi.add_limit($CONST_INT.text)} ']' {compi.add_operand($ID.text, 2);} | ']' {compi.add_operand($ID.text, 1)}) {compi.increase_varCount()}) (',' class_att | ':' var_type {compi.define_attr($var_type.text)} ';' (class_att | class_l) );
-class_l: 'methods' ':' class_p | '}' ';' {compi.end_class()};
+class_l: {compi.add_att_to_parent_meths()} ('methods' ':' class_p | '}' ';' {compi.end_class()});
 class_p: class_func '}' ';' {compi.end_class()} | class_func class_p;
 
 class_func: type_meth 'meth' ID {compi.define_method($type_meth.text, $ID.text, True)} '(' {compi.open_parens()} c_func_t;
@@ -99,8 +99,8 @@ r_while: 'while' {compi.while_condition()} '(' {compi.open_parens()} super_exp '
 
 floop: 'floop' var 'to' super_exp {compi.floop()} 'do' {compi.floop_check()} block {compi.floop_end()};
 
-super_exp: '!' expression super_exp_t | expression super_exp_t;
-super_exp_t: 'and' super_exp | 'or' super_exp | ;
+super_exp: '!' expression {compi.logic_operation('NOT')} super_exp_t | expression super_exp_t;
+super_exp_t: 'and' super_exp {compi.logic_operation('AND')} (super_exp | ) | 'or' super_exp {compi.logic_operation('OR')} (super_exp | ) | ;
 
 expression: exp (
                     (

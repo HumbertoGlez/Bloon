@@ -12,7 +12,7 @@ semanticCube = {
         INT: {
             '+':INT,
             '-': INT,
-            '*': INT,
+            '*': FLOAT,
             '/': INT,
             '%': INT,
             '>': INT,
@@ -24,7 +24,7 @@ semanticCube = {
             '!=': INT,
             '+=': INT,
             '-=': INT,
-            '*=': INT,
+            '*=': FLOAT,
             '/=': INT
         },
         FLOAT: {

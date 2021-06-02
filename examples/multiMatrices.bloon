@@ -1,0 +1,55 @@
+program multiMatrices;
+vars
+    a[4, 4], b[4, 4], c[4, 4] : int;
+    i, j : int;
+
+void meth printMatrix(int mat[4, 4])
+vars
+    i : int;
+{
+    i = 0;
+    floop i to 3 do {
+        write(mat[i, 0], " ", mat[i, 1], " ", mat[i, 2], " ", mat[i, 3]);
+    }
+}
+
+void meth multiply(int mat1[4, 4], int mat2[4, 4], int res[4, 4])
+vars
+    i, j, k, n : int;
+{
+    n = 4;
+    i = 0;
+    floop i to n-1 do {
+        j = 0;
+        floop j to n-1 do {
+            res[i, j] = 0;
+            k = 0;
+            floop k to n-1 do {
+                res[i, j] += mat1[i, k] * mat2[k, j];
+            }
+        }
+    }
+    
+}
+
+main () {
+    i = 0;
+    write("Enter values for matrix 1");
+    floop i to 3 do {
+        j = 0;
+        floop j to 3 do {
+            read(a[i, j]);
+        }
+    }
+
+    write("Enter values for matrix 2");
+    i = 0;
+    floop i to 3 do {
+        j = 0;
+        floop j to 3 do {
+            read(b[i, j]);
+        }
+    }
+    multiply(a, b, c);
+    printMatrix(c);
+}

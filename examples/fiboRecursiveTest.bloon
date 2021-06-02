@@ -1,4 +1,4 @@
-program fibonacciTest;
+program fiboRecursiveTest;
 
 vars
     i : int;
@@ -12,6 +12,6 @@ int meth fibonacci(int n)
 }
 
 main() {
-    i = 9;
+    read(i);
     write(fibonacci(i));
 }
