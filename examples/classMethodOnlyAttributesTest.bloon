@@ -34,4 +34,5 @@ main() {
     write("Juan tiene un IMC de ", juan.getIMC());
     write(juan.nombre, " tiene ", juan.edad, " anios.");
     juan.printDatos();
+    write(juan.nombre);
 }

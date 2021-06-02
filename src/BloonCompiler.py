@@ -23,6 +23,8 @@ class Method:
     m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'Any': 0}
     m_temp_count: int = attr.ib(0)
     m_member_addrs: Dict[str, Any] = attr.ib(attr.Factory(dict))
+    m_member_data: Dict[str, Any] = attr.ib(attr.Factory(dict))
+    m_obj_vars_refs: Dict[str, Any] = attr.ib(attr.Factory(dict))
     def get_address(self, v_type):
         if v_type in self.m_vars_counts:
             self.m_vars_counts[v_type] += 1
@@ -172,6 +174,7 @@ class Compiler:
         else:
             address = method.get_address('Any')
         method.m_member_addrs['this'] = address
+        method.m_member_data['this'] = ['Any', 0]
         var_table['Any']['this'] = Var(address, isGlobal, class_id=cl_id)
         for key in classObj.attributes:
             a = classObj.attributes[key]
@@ -191,6 +194,7 @@ class Compiler:
                     if size > 1:
                         nxt_a = method.get_address(a.a_type)
                 method.m_member_addrs[v_name] = [address]
+                method.m_member_data[v_name] = [a.a_type, 1, dims]
                 var_table[a.a_type][v_name] = Var(address, isGlobal, dims, cl_id, nxt_a)
                 for j in range(1, size):
                     if f'{v_name}{j}' in var_table[a.a_type]:
@@ -200,7 +204,7 @@ class Compiler:
                         address = nxt_a
                         nxt_a = method.get_address(a.a_type) if size > j + 1 else None
                     var_table[a.a_type][f'{v_name}{j}'] = Var(address, isGlobal, class_id=cl_id, next=nxt_a)
-                    method.m_member_addrs[f'{v_name}{j}'].append(address)
+                    method.m_member_addrs[v_name].append(address)
             elif a.dims == 2:
                 limit = a.dimSizes[0]
                 limit2 = a.dimSizes[1]
@@ -221,6 +225,7 @@ class Compiler:
                     if size > 1:
                         nxt_a = method.get_address(a.a_type)
                 method.m_member_addrs[v_name] = [address]
+                method.m_member_data[v_name] = [a.a_type, 2, dims]
                 var_table[a.a_type][v_name] = Var(address, isGlobal, dims, class_id=cl_id, next=nxt_a)
                 for j in range(1, size):
                     if f'{v_name}{j}' in var_table[a.a_type]:
@@ -230,13 +235,14 @@ class Compiler:
                         address = nxt_a
                         nxt_a = method.get_address(a.a_type) if size > j + 1 else None
                     var_table[a.a_type][f'{v_name}{j}'] = Var(address, isGlobal, class_id=cl_id, next=nxt_a)
-                    method.m_member_addrs[f'{v_name}{j}'].append(address)
+                    method.m_member_addrs[v_name].append(address)
             else:
                 if v_name in var_table[a.a_type]:
                     address = var_table[a.a_type][v_name].address
                 else:
                     address = method.get_address(a.a_type)
                 method.m_member_addrs[v_name] = address
+                method.m_member_data[v_name] = [a.a_type, 0]
                 var_table[a.a_type][v_name] = Var(address, isGlobal, class_id=cl_id)
 
     def define_method(self, method_type, method_id, isClass = False):
@@ -269,10 +275,11 @@ class Compiler:
             self.meth_dir[method_id].m_start = len(self.quad_queue)
 
     def process_method(self):
-        self.quad_queue.append(Quadruple("ENDMETH"))
         if not self.methodLoc_stack[-1] or self.method_stack[-1] == 'global':
+            self.quad_queue.append(Quadruple("ENDMETH"))
             self.meth_dir[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
         else:
+            self.quad_queue.append(Quadruple("ENDMETH", ans='cl'))
             self.class_dir[self.class_stack[-1]].methods[self.method_stack[-1]].m_end = len(self.quad_queue) - 1
         self.method_stack.pop()
         
@@ -353,7 +360,7 @@ class Compiler:
             method.m_param_addrs.append(address)
             if pt not in self.basicTypes:
                 method.m_vars[param_type][param_id] = Var(address, False, class_id=pt)
-                self.define_object_variables(method, False, param_id, pt, True)
+                self.define_object_variables(method, False, param_id, pt)
             else:
                 method.m_vars[param_type][param_id] = Var(address, False)
         method.m_param_count += 1
@@ -387,10 +394,12 @@ class Compiler:
                 if size > 1:
                     nxt_a = method.get_address(a.a_type)
                 var_dir[v_name] = Var(address, isGlobal, dims, next=nxt_a, isRef=isRef)
+                method.m_obj_vars_refs[v_name] = [[address], a.a_type, isGlobal, 1, dims]
                 for j in range(1, size):
                     address = nxt_a
                     nxt_a = method.get_address(a.a_type) if size > j + 1 else None
                     var_dir[f'{v_name}{j}'] = Var(address, isGlobal, next=nxt_a, isRef=isRef)
+                    method.m_obj_vars_refs[v_name][0].append(address)                    
             elif a.dims == 2:
                 limit = a.dimSizes[0]
                 limit2 = a.dimSizes[1]
@@ -406,13 +415,16 @@ class Compiler:
                 if size > 1:
                     nxt_a = method.get_address(a.a_type)
                 var_dir[v_name] = Var(address, isGlobal, dims, next = nxt_a, isRef=isRef)
+                method.m_obj_vars_refs[v_name] = [[address], a.a_type, isGlobal, 2, dims]
                 for j in range(1, size):
                     address = nxt_a
                     nxt_a = method.get_address(a.a_type) if size > j + 1 else None
                     var_dir[f'{v_name}{j}'] = Var(address, isGlobal, next=nxt_a, isRef=isRef)
+                    method.m_obj_vars_refs[v_name][0].append(address)
             else:
                 address = method.get_address(a.a_type)
-                var_dir[v_name] = Var(address, isGlobal, isRef=isRef)  
+                var_dir[v_name] = Var(address, isGlobal, isRef=isRef)
+                method.m_obj_vars_refs[v_name] = [address, a.a_type, isGlobal, 0]
 
     # Needs revision for classes
     def define_var(self, v_type):
@@ -819,7 +831,7 @@ class Compiler:
             if cl == False:
                 self.quad_queue.append(Quadruple("ERA", ans=id))
             else:
-                self.quad_queue.append(Quadruple("ERA", None, Operand(cl), ans=id))
+                self.quad_queue.append(Quadruple("ERA", [self.methodLoc_stack[-1], self.method_stack[-1], cl, id, self.parentId], Operand(cl), ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
                 # print(argument.op_type, " ", argument.op_id, argument.op_addr, ", ", method.m_param_types[method.m_param_count - 1 - i])
@@ -834,6 +846,8 @@ class Compiler:
                     self.add_operand(f'{self.parentId}.{a.a_id}')
                     self.get_var()
                     arg = self.operand_stack.pop()
+                    print(arg.op_id, ", ", f'this.{a.a_id}')
+                    print(arg.op_addr, ", ", method.m_member_addrs[f'this.{a.a_id}'])
                     self.quad_queue.append(Quadruple("MEMBERVAR", arg, None, method.m_member_addrs[f'this.{a.a_id}']))
                     count += 1
 

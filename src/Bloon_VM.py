@@ -27,6 +27,7 @@ class VirtualMachine():
     localString_start = []
     localUnspecified_start = []
     messages = []
+    classAttRefStack = []
 
     def __init__(self, parser, **kwargs):
         self.quad_queue = parser.quad_queue
@@ -44,7 +45,7 @@ class VirtualMachine():
                     value = str(value)
                 self.register_value(address, value, const_type, True)
     
-    def register_value(self, address, value, v_type, isglobal=False, isRef=False, memRef=False):
+    def register_value(self, address, value, v_type, isglobal=False, isRef=False, memRef=False, older=False):
         intStart = 0
         floatStart = 0
         charStart = 0
@@ -57,13 +58,20 @@ class VirtualMachine():
             charStart = self.CHAR_START
             strStart = self.STRING_START
             uStart = self.UNSPECIFIED
-        else:
+        elif not older:
             curr_memory = self.mem
             intStart = self.localInt_start[-1]
             floatStart = self.localFloat_start[-1]
             charStart = self.localChar_start[-1]
             strStart = self.localString_start[-1]
             uStart = self.localUnspecified_start[-1]
+        else:
+            curr_memory = self.mem
+            intStart = self.localInt_start[-2]
+            floatStart = self.localFloat_start[-2]
+            charStart = self.localChar_start[-2]
+            strStart = self.localString_start[-2]
+            uStart = self.localUnspecified_start[-2]
         
         if type(address) is int:
             if v_type == 'int':
@@ -532,7 +540,9 @@ class VirtualMachine():
 
         if att.dimensions == 0:
             p_value = self.get_value(att.op_addr, att.op_type, att.isGlobal, older=True)
+            # print("value:",p_value)
             self.mem = new_mem
+            # print("Registering at address", l_address, "type", att.op_type)
             self.register_value(l_address, p_value, att.op_type)
         elif att.dimensions == 1:
             for i in range(att.dims[0].upperLim + 1):
@@ -572,6 +582,68 @@ class VirtualMachine():
             curr_memory[strStart + r_addr] = str(val)
         elif m_type == 'any':
             curr_memory[uStart + r_addr] = val
+    
+    def save_attributes(self):
+        expiring_mem = self.mem
+        returning_mem = self.t_mem
+        # l_address = self.attribute_refs[attrNum]
+        # self.mem = self.t_mem
+        ownerMethod = self.meth_dir[self.classAttRefStack[-1][1]] if not self.classAttRefStack[-1][0] else self.class_dir[self.classAttRefStack[-1][0]].methods[self.classAttRefStack[-1][1]]
+        expiringMethod = self.class_dir[self.classAttRefStack[-1][2]].methods[self.classAttRefStack[-1][3]]
+        ownerId = self.classAttRefStack[-1][4]
+        # if not self.classAttRefStack[-1][0] and self.classAttRefStack[-1][1] == 'global':
+        #     isGlobal = True
+        # else:
+        #     isGlobal = False
+        for key in expiringMethod.m_member_addrs:
+            if key == 'this':
+                continue
+            address = expiringMethod.m_member_addrs[key]
+            member_type = expiringMethod.m_member_data[key][0]
+            member_dims = expiringMethod.m_member_data[key][1]
+            keyWithoutThis = key.replace('this', '')
+            if ownerId != 'this':
+                toSaveRefs = ownerMethod.m_obj_vars_refs[f'{ownerId}{keyWithoutThis}']
+                if member_dims == 0:
+                    p_value = self.get_value(address, member_type, False)
+                    # print("value for", key, member_type, "at", address, "in meth:",p_value)
+                    self.mem = returning_mem
+                    # print("Registering at address", toSaveRefs[0], "type", toSaveRefs[1])
+                    self.register_value(toSaveRefs[0], p_value, toSaveRefs[1], toSaveRefs[2], older=True)
+                    self.mem = expiring_mem
+                elif member_dims == 1:
+                    for i in range(toSaveRefs[4][0].upperLim + 1):
+                        p_value = self.get_value(address[i], member_type, False)
+                        self.mem = returning_mem
+                        self.register_value(toSaveRefs[0][i], p_value, toSaveRefs[1], toSaveRefs[2], older=True)
+                        self.mem = expiring_mem
+                elif member_dims == 2:
+                    for i in range((toSaveRefs[4][0].upperLim + 1) * (toSaveRefs[4][1].upperLim + 1)):
+                        p_value = self.get_value(address[i], member_type, False)
+                        self.mem = returning_mem
+                        self.register_value(toSaveRefs[0][i], p_value, toSaveRefs[1], toSaveRefs[2], older=True)
+                        self.mem = expiring_mem
+            else:
+                om_address = ownerMethod.m_member_addrs[key]
+                om_data = ownerMethod.m_member_data[key]
+                if member_dims == 0:
+                    p_value = self.get_value(address, member_type, False)
+                    self.mem = returning_mem
+                    self.register_value(om_address, p_value, om_data[0], False, older=True)
+                    self.mem = expiring_mem
+                elif member_dims == 1:
+                    for i in range(om_data[2][0].upperLim + 1):
+                        p_value = self.get_value(address[i], member_type, False)
+                        self.mem = returning_mem
+                        self.register_value(om_address[i], p_value, om_data[0], False, older=True)
+                        self.mem = expiring_mem
+                elif member_dims == 2:
+                    for i in range((om_data[2][0].upperLim + 1) * (om_data[2][1].upperLim + 1)):
+                        p_value = self.get_value(address[i], member_type, False)
+                        self.mem = returning_mem
+                        self.register_value(om_address[i], p_value, om_data[0], False, older=True)
+                        self.mem = expiring_mem
+        self.classAttRefStack.pop()
 
     def run(self):
         q = 0
@@ -602,6 +674,8 @@ class VirtualMachine():
                     q = quad.ans
                     continue
             elif quad.operator == 'ERA':
+                if quad.left_op:
+                    self.classAttRefStack.append(quad.left_op)
                 self.era(quad.ans) if quad.right_op == None else self.era(quad.ans, quad.right_op.op_id)
             elif quad.operator == 'PARAM':
                 self.param(quad.left_op, quad.ans)
@@ -630,6 +704,8 @@ class VirtualMachine():
                 # Remove local memory from the top of mem_stack
                 # for i in self.mem_stack[-1]:
                 #     print(i)
+                if quad.ans == 'cl':
+                    self.save_attributes()
                 self.mem_stack.pop()
                 self.localInt_start.pop()
                 self.localFloat_start.pop()
