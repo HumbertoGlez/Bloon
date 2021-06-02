@@ -1,8 +1,8 @@
 program binarySearch;
 vars
-    arr[10], x, n, result, i : int;
+    arr[5], x, n, result, i : int;
 
-int meth check(int arr[10], int dig, int k)
+int meth check(int arr[5], int dig, int k)
 vars
     ele : int;
 {
@@ -15,7 +15,7 @@ vars
     }
 }
 
-int meth binarySearchAux(int arr[10], int l, int h, int x)
+int meth binarySearchAux(int arr[5], int l, int h, int x)
 vars
     mid : int;
 {
@@ -35,7 +35,7 @@ vars
         return (-1);
     }
 }
-int meth binarySearch(int arr[10], int l, int n, int x)
+int meth binarySearch(int arr[5], int l, int n, int x)
 vars
     i, j, temp : int;
 {
@@ -55,7 +55,8 @@ vars
 
 main () {
     i = 0;
-    n = 10;
+    n = 5;
+     write("Enter 5 values");
     floop i to n-1 do {
         read(arr[i]);
     } 

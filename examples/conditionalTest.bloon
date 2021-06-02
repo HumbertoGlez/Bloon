@@ -7,5 +7,5 @@ main () {
     cond (x > y) then {
         write(x, " > ", y, " was true");
     }
-    write("outside cond");
+    write("outside of cond");
 }

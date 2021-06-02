@@ -575,8 +575,9 @@ class VirtualMachine():
 
     def run(self):
         q = 0
-        for i, quad in enumerate(self.quad_queue):
-            print(i, quad)
+        # uncomment to print generated quadruples
+        # for i, quad in enumerate(self.quad_queue):
+        #    print(i, quad)
         
         while q < len(self.quad_queue):
             quad = self.quad_queue[q]

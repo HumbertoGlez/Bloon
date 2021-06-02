@@ -1,0 +1,15 @@
+program Team_pp;
+
+vars
+    i : int;
+
+
+main (){
+    i = 5;
+
+    while (i < 10) do {
+        write("i ", i);
+        i += 1;
+    }
+    
+}

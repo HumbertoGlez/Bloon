@@ -1,0 +1,9 @@
+program HelloTest;
+
+vars
+text : string;
+
+main() {
+    text = "Hello Bloon";
+    write(text);
+}

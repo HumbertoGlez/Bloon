@@ -19,9 +19,9 @@ main () {
     num[2] = 334;
     write(num[2]);
     write(floats[1,2]);
-    strs[0,0] = "bebecita";
+    strs[0,0] = "fizz";
     write(strs[0,0]);
-    strs[2,4] = "kaka";
+    strs[2,4] = "buzz";
     arrays(num, floats, strs);
 
 }

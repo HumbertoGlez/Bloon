@@ -1,18 +1,18 @@
 program quickSort;
 vars
-    arr[10], n, i : int;
+    arr[5], n, i : int;
 
 void meth printArray(int arr[10]) 
 vars
     i : int;
 {
     i = 0;
-    floop i to 9 do {
+    floop i to 4 do {
         write(arr[i]);
     }
 }
 
-void meth quickSort(int number[10], int first, int last)
+void meth quickSort(int number[5], int first, int last)
 vars
     i, j, pivot, temp : int;
 {
@@ -44,8 +44,9 @@ vars
 }
 
 main() {
-    n = 10;
+    n = 5;
     i = 0;
+    write("Enter 5 values");
     floop i to n-1 do {
         read(arr[i]);
     }

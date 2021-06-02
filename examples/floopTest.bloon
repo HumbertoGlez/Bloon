@@ -7,8 +7,8 @@ vars
 main (){
     i = 0;
     j = 0;
-    floop i to 5 do {
-        floop j to 5 do {
+    floop i to 3 do {
+        floop j to 3 do {
             write("j ", j);
         }
         j = 0;
