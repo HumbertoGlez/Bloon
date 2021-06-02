@@ -17,10 +17,10 @@ class VirtualMachine():
     param_refs = []
     attribute_refs = []
     INT_START = 0
-    FLOAT_START = 250
-    CHAR_START = 500
-    STRING_START = 750
-    UNSPECIFIED = 1000
+    FLOAT_START = 1500
+    CHAR_START = 3000
+    STRING_START = 4500
+    UNSPECIFIED = 6000
     localInt_start = []
     localFloat_start = []
     localChar_start = []
