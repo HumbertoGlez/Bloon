@@ -1,0 +1,147 @@
+program TransportClassTest;
+class Transport {
+    attributes:
+        wheels : int;
+        weight : float;
+        color : string;
+    methods:
+        void meth getTransportData() {
+            this.wheels = 0;
+            this.weight = 0.0;
+            this.color = "none";
+        }
+        void meth setTransportData(int wh, float we, string c) {
+            this.wheels = wh;
+            this.weight = we;
+            this.color = c;
+        }
+        void meth printTransportData() {
+            write("Wheels: ", this.wheels);   
+            write("Weight: ", this.weight);   
+            write("Color: ", this.color);   
+        }
+};
+
+class Bus <inherits Transport> {
+    attributes:
+        ticketPrice : float;
+    methods:
+        void meth setTicketPrice(float tp) {
+            this.ticketPrice = tp;
+        }
+        float meth getTicketPrice() {
+            return(this.ticketPrice);
+        }
+        void meth printBusData() {
+            write("Bus wheels: ", this.wheels);   
+            write("Bus weight: ", this.weight);   
+            write("Bus color: ", this.color);
+            write("Bus price: ", this.ticketPrice);
+            cond (this.ticketPrice > 5.0) then {
+                write("expensive"); 
+            }
+            else {
+                write("cheap"); 
+            }
+        }
+};
+
+class Car <inherits Transport> {
+    attributes:
+        brand : string;
+    methods:
+        void meth setCarBrand(string b){
+            this.brand = b;
+        }
+        string meth getCarBrand() {
+            return(this.brand);
+        }
+        void meth printCarData() {
+            write("Car wheels: ", this.wheels);   
+            write("Car weight: ", this.weight);   
+            write("Car color: ", this.color);
+            write("Car brand: ", this.brand); 
+            cond (this.brand == "mazda") then {
+                write("this is a japanese car"); 
+            }
+            else {
+                cond (this.brand == "chevrolet") then {
+                    write("This is an american car"); 
+                }
+                else {
+                    write("This is another brand of car"); 
+                }
+            }  
+        }
+};
+
+vars
+    bus1, bus2 : Bus;
+    car1, car2 : Car;
+    transport1, transport2 : Transport;
+    wh : int;
+    we, t : float;
+    in : char;
+    c, b : string;
+
+
+main(){
+    write("Transport Class Test");
+    wh = 4;
+    we = 1000.5;
+    c = "red";
+    t = 4.50;
+    bus1.setTransportData(wh, we, c);
+    bus1.setTicketPrice(t);
+    car1.setTransportData(4, 300.4, "blue");
+    car1.setCarBrand("mazda");
+    transport1.wheels = 8;
+    transport1.weight = 400.7;
+    transport1.color = "yellow";
+
+    write("Register a bus(b), car(c) or a transport(t)?");
+    read(in);
+    write(in);
+    write("Please specify the number of wheels(int), weight(float), color(string) \n");
+    read(wh, we, c);
+    cond (in == 'b') then {
+        bus2.setTransportData(wh, we, c);
+        write("Specify the ticket price (float)");
+        read(t);
+        bus2.setTicketPrice(t);
+    }
+    else {
+        cond (in == 'c') then {
+            car2.setTransportData(wh, we, c);
+            write("Specify the brand of the car");
+            read(b);
+            car2.setCarBrand(b);
+        }
+        else {
+            transport2.setTransportData(wh, we, c);
+        }
+    }
+
+    write("Stored transports information: ");
+    write("Bus: ");
+    bus1.printBusData();
+    write("Car: ");
+    car1.printCarData();
+    write("Transport: ");
+    transport1.printTransportData();
+    cond (in == 'b') then {
+       write("Bus input");
+       bus2.printBusData();
+    }
+    else {
+        cond (in == 'c') then {
+            write("Car input: ");
+            car2.printCarData();
+        }
+        else {
+            write("Transport input: ");
+            transport2.printTransportData();
+        }
+    }
+
+}

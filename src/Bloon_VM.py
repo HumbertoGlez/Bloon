@@ -183,7 +183,7 @@ class VirtualMachine():
 
     def read(self, operand):
         value = input("Enter value to read: ")
-        if operand.op_type != 'string' or operand.op_type != 'char':
+        if operand.op_type != 'string' and operand.op_type != 'char':
             if operand.op_type == 'int':
                 try:
                     val = int(value)
@@ -196,11 +196,18 @@ class VirtualMachine():
             elif operand.op_type == 'float':
                 try:
                     val = float(value)
-                    self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) if not operand.isRef else self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
+                    if operand.dimensions == 0:
+                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) 
+                    else: 
+                        self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
                 except ValueError:
                     raise Exception(f"Invalid input to read for variable of type {operand.op_type}")
-        else:
-            self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal) if not  operand.isRef else self.register_value(operand.op_addr, value, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
+        else:  
+            val = f'{value}'
+            if operand.dimensions == 0:
+                self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal) 
+            else: 
+                self.register_value(operand.op_addr, val, operand.op_type, operand.isGlobal, isRef=operand.isRef, memRef=operand.refAmount)
 
     def operation(self, left, right, op):
         # CHECK FOR TYPE
@@ -231,7 +238,6 @@ class VirtualMachine():
             raise Exception(f'Unassigned variable: {left.op_id}')
         elif right_v == None:
             raise Exception(f'Unassigned variable: {right.op_id}')
-
         if op == 'add':
             if type_left_char:
                 if right.op_type == 'int':

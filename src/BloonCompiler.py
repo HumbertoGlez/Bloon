@@ -766,6 +766,7 @@ class Compiler:
         method = self.meth_dir['global']
         address = method.get_address(const_type)
         val = val.strip('"')
+        val = val.replace("'", "")
         dir[val] = Var(address, True)
         self.constants[const_type][address] = val
         return address
