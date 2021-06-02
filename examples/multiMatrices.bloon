@@ -5,11 +5,15 @@ vars
 
 void meth printMatrix(int mat[4, 4])
 vars
-    i : int;
+    i, j : int;
 {
     i = 0;
     floop i to 3 do {
-        write(mat[i, 0], " ", mat[i, 1], " ", mat[i, 2], " ", mat[i, 3]);
+        j = 0;
+        floop j to 3 do {
+            write(mat[i, j], " "\c); 
+        }
+        write("");
     }
 }
 
