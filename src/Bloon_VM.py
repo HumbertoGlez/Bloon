@@ -228,9 +228,9 @@ class VirtualMachine():
             right_v = self.get_value(right.op_addr, right.op_type, right.isGlobal, right.dimensions)
         # print("l: ",left_v, "r: ", right_v)
         if left_v == None:
-            raise Exception(f'Undefined variable: {left.op_id}')
+            raise Exception(f'Unassigned variable: {left.op_id}')
         elif right_v == None:
-            raise Exception(f'Undefined variable: {right.op_id}')
+            raise Exception(f'Unassigned variable: {right.op_id}')
 
         if op == 'add':
             if type_left_char:

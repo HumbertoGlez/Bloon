@@ -14,12 +14,12 @@ class student <inherits persona> {
         edad : int;
     methods:
         void meth printDatos() {
-            this.nombre = "kulo";
             write("Nombre: ", this.nombre);
             write("Edad: ", this.edad);
             write("Peso: ", this.weight);
             write("Altura: ", this.height);
             write("IMC: ", this.getIMC(this.weight, this.height));
+            this.nombre = "kulo";
         }
 };
 

@@ -142,7 +142,7 @@ class Compiler:
                 attr_id = a.op_id
                 self.newVar_count = self.newVar_count - 1
                 if attr_id in attr_table:
-                    raise Exception(f'An attribute named {attr_id} was already defined')
+                    raise Exception(f'An attribute named {attr_id} was already defined in class {self.class_stack[-1]}')
                 else:
                     if a.dimensions == 1:
                         limit = self.upperLimits.pop()
@@ -834,7 +834,6 @@ class Compiler:
                 self.quad_queue.append(Quadruple("ERA", [self.methodLoc_stack[-1], self.method_stack[-1], cl, id, self.parentId], Operand(cl), ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
-                # print(argument.op_type, " ", argument.op_id, argument.op_addr, ", ", method.m_param_types[method.m_param_count - 1 - i])
                 if argument.op_type == method.m_param_types[method.m_param_count -1 - i]:
                     self.quad_queue.append(Quadruple("PARAM", argument, None, method.m_param_count -1 - i))
                 else:
@@ -846,8 +845,6 @@ class Compiler:
                     self.add_operand(f'{self.parentId}.{a.a_id}')
                     self.get_var()
                     arg = self.operand_stack.pop()
-                    print(arg.op_id, ", ", f'this.{a.a_id}')
-                    print(arg.op_addr, ", ", method.m_member_addrs[f'this.{a.a_id}'])
                     self.quad_queue.append(Quadruple("MEMBERVAR", arg, None, method.m_member_addrs[f'this.{a.a_id}']))
                     count += 1
 
