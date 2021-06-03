@@ -181,3 +181,8 @@ int meth getIMC() {
 
 For aditional examples refer to the  `examples` directory in this repository
 
+# Bloon Demo Video
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=g2Zjm3j_A8k
+" target="_blank"><img src="http://img.youtube.com/vi/g2Zjm3j_A8k/0.jpg" 
+alt="DEMO" width="240" height="180" border="10" /></a>
+
