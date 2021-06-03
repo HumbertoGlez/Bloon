@@ -19,20 +19,20 @@ class student <inherits persona> {
             write("Peso: ", this.weight);
             write("Altura: ", this.height);
             write("IMC: ", this.getIMC(this.weight, this.height));
-            this.nombre = "kulo";
+            this.nombre = "Adrian";
         }
 };
 
 vars
-    juan : student;
+    s1 : student;
 
 main() {
-    juan.weight = 65;
-    juan.height = 1.68;
-    juan.nombre = "Juan";
-    juan.edad = 22;
-    write("Juan tiene un IMC de ", juan.getIMC(juan.weight, juan.height));
-    write(juan.nombre, " tiene ", juan.edad, " anios.");
-    juan.printDatos();
-    write(juan.nombre);
+    s1.weight = 65;
+    s1.height = 1.68;
+    s1.nombre = "Juan";
+    s1.edad = 22;
+    write(s1.nombre, " tiene un IMC de ", s1.getIMC(s1.weight, s1.height));
+    write(s1.nombre, " tiene ", s1.edad, " anios.");
+    s1.printDatos();
+    write(s1.nombre);
 }

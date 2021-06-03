@@ -14,7 +14,7 @@ class student <inherits persona> {
         edad : int;
     methods:
         void meth printDatos() {
-            this.nombre = "kulo";
+            this.nombre = "Martin";
             write("Nombre: ", this.nombre);
             write("Edad: ", this.edad);
             write("Peso: ", this.weight);
@@ -24,15 +24,15 @@ class student <inherits persona> {
 };
 
 vars
-    juan : student;
+    s1 : student;
 
 main() {
-    juan.weight = 65;
-    juan.height = 1.68;
-    juan.nombre = "Juan";
-    juan.edad = 22;
-    write("Juan tiene un IMC de ", juan.getIMC());
-    write(juan.nombre, " tiene ", juan.edad, " anios.");
-    juan.printDatos();
-    write(juan.nombre);
+    s1.weight = 65;
+    s1.height = 1.68;
+    s1.nombre = "Juan";
+    s1.edad = 22;
+    write(s1.nombre, " tiene un IMC de ", s1.getIMC());
+    write(s1.nombre, " tiene ", s1.edad, " anios.");
+    s1.printDatos();
+    write(s1.nombre);
 }
