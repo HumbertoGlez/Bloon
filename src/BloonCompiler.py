@@ -88,7 +88,7 @@ class Compiler:
     # Dictionary of methods, key is string with id
     meth_dir = {
         "global": Method('void', {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}}),
-        "main": Method('int',  {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}}),
+        "main": Method('void',  {'int': {}, 'float': {}, 'string': {}, 'char': {}, 'Any': {}}),
         "read": Method('void', {}),
         "write": Method('void', {}),
     }
