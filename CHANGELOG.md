@@ -22,3 +22,6 @@ Se corrigieron y completaron aspectos de la generación de código de declaraci�
 
 Avance 7:
 Se realizó la implementación de la maquina virtual con ejecución de operaciones, estatutos lineales, condicionales, ciclos y funciones. También se agregó el operador módulo al cubo semántico y se implementó en la máquina virtual. Se hizo un refactor de la funcionalidad de operadores en la máquina virtual, para agregar validaciones extras para apegarse a la descripción del lenguaje y los requerimientos establecidos. Se agregaron nuevos casos de prueba para probar las funcionalidades de avances pasados y este.
+
+Avance 8:
+ Se realizaron correcciones a la gramática de clases, se mejoraron los casos de prueba. También, se implementaron los operadores lógicos and y or. Se realizó la documentación relevante al proyecto y el manual de usuario.
