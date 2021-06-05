@@ -3,7 +3,7 @@ program Team_pp;
  class Persona {
     attributes:
         edad : int;
-        nombre[30] : char;
+        nombre : string;
     methods:
         int meth uno(int x) {
             return(this.edad - x);
@@ -14,21 +14,23 @@ program Team_pp;
     i, p, j : int;
     estudiante : Persona;
 
-int meth fact(int j) {
+int meth fact(int j, int p) 
+vars
+    i : int;
+{
     i = j + (p - j * 2 + j);
     cond (j == 1) then {
         return (j);
     }
     else {
-        return(j * fact(j - 1));
+        return(j * fact(j - 1, p));
     }
 }
 
+void meth pelos(int y, Persona estudiante)
 vars
     x : int;
-
-void meth pelos(int y) {
-    read(estudiante.edad);
+{
     x = y;
     
     while(x < 10) do {
@@ -41,14 +43,15 @@ main() {
     write("please enter a number (int)");
     read(p);
     j = p * 2;
-    i = fact(p);
+    i = fact(p, p);
     write("please enter the name (string)");
     read(estudiante.nombre);
     write("please enter the age (int)");
-    pelos(p);
+    read(estudiante.edad);
+    pelos(p, estudiante);
 
     i = 1;
     floop i to 10 do {
-        write("HelloWorld", estudiante.nombre, fact(estudiante.edad));
+        write("HelloWorld ", estudiante.nombre, " ", fact(estudiante.edad, p));
     }
 }
