@@ -1,6 +1,6 @@
 from collections import deque
 
-import attr
+import re
 
 from tools import operation_result_type
 
@@ -496,10 +496,24 @@ class VirtualMachine():
         new_mem = self.mem
         p_local_address = self.param_addrs[argNum]
         self.mem = self.t_mem
+        a_type = 'Any' if arg.op_type not in ['int', 'float', 'char', 'string'] else arg.op_type
+        ownerMethod = self.meth_dir[self.classAttRefStack[-1][1]] if not self.classAttRefStack[-1][0] else self.class_dir[self.classAttRefStack[-1][0]].methods[self.classAttRefStack[-1][1]]
+        destinationMethod = self.meth_dir[self.classAttRefStack[-1][3]] if not self.classAttRefStack[-1][2] else self.class_dir[self.classAttRefStack[-1][2]].methods[self.classAttRefStack[-1][3]]
         if arg.dimensions == 0:
-            p_value = self.get_value(arg.op_addr, arg.op_type, arg.isGlobal, older=True) 
+            p_value = self.get_value(arg.op_addr, a_type, arg.isGlobal, older=True) 
             self.mem = new_mem
-            self.register_value(p_local_address, p_value, arg.op_type)
+            self.register_value(p_local_address, p_value, a_type)
+            if a_type == 'Any':
+                self.mem = self.t_mem
+                for key in ownerMethod.m_obj_vars_refs:
+                    keyWithoutOwner = re.sub(r'^.*?\.', '', key)
+                    subKey = f'{arg.op_id}.{keyWithoutOwner}'
+                    if key == subKey:
+                        pval = self.get_value(ownerMethod.m_obj_vars_refs[subKey][0], ownerMethod.m_obj_vars_refs[subKey][1], arg.isGlobal, older = True)
+                        self.mem = new_mem
+                        self.register_value(destinationMethod.m_vars[ownerMethod.m_obj_vars_refs[subKey][1]][f'{destinationMethod.m_param_ids[argNum]}.{keyWithoutOwner}'].address, pval, ownerMethod.m_obj_vars_refs[subKey][1])
+                        self.mem = self.t_mem
+                self.mem = new_mem
         elif arg.dimensions == 1:
             self.mem = new_mem
             self.register_value(self.param_refs[argNum][0], arg.op_addr, 'int')
@@ -514,10 +528,21 @@ class VirtualMachine():
                 self.register_value(self.param_refs[argNum][1], self.mem_stack.index(self.t_mem), 'int')
             self.mem = self.t_mem
             for i in range(arg.dims[0].upperLim + 1):
-                p_value = self.get_value(arg.op_addr + i, arg.op_type, arg.isGlobal, older=True)
+                p_value = self.get_value(arg.op_addr + i, a_type, arg.isGlobal, older=True)
                 self.mem = new_mem
-                self.register_value(p_local_address[i], p_value, arg.op_type)
+                self.register_value(p_local_address[i], p_value, a_type)
                 self.mem = self.t_mem
+                if a_type == 'Any':
+                    self.mem = self.t_mem
+                    for key in ownerMethod.m_obj_vars_refs:
+                        keyWithoutOwner = re.sub(r'^.*?\.', '', key)
+                        subKey = f'{arg.op_id}.{keyWithoutOwner}'
+                        if key == subKey:
+                            pval = self.get_value(ownerMethod.m_obj_vars_refs[subKey][0][i], ownerMethod.m_obj_vars_refs[subKey][1], arg.isGlobal, older = True)
+                            self.mem = new_mem
+                            self.register_value(destinationMethod.m_vars[ownerMethod.m_obj_vars_refs[subKey][1]][f'{destinationMethod.m_param_ids[argNum][i]}.{keyWithoutOwner}'].address, pval, ownerMethod.m_obj_vars_refs[subKey][1])
+                            self.mem = self.t_mem
+                    self.mem = new_mem
             self.mem = new_mem
         elif arg.dimensions == 2:
             self.mem = new_mem
@@ -533,10 +558,21 @@ class VirtualMachine():
                 self.register_value(self.param_refs[argNum][1], self.mem_stack.index(self.t_mem), 'int')
             self.mem = self.t_mem
             for i in range((arg.dims[0].upperLim + 1) * (arg.dims[1].upperLim + 1)):
-                p_value = self.get_value(arg.op_addr+i, arg.op_type, arg.isGlobal, older=True)
+                p_value = self.get_value(arg.op_addr+i, a_type, arg.isGlobal, older=True)
                 self.mem = new_mem
-                self.register_value(p_local_address[i], p_value, arg.op_type)
+                self.register_value(p_local_address[i], p_value, a_type)
                 self.mem = self.t_mem
+                if a_type == 'Any':
+                    self.mem = self.t_mem
+                    for key in ownerMethod.m_obj_vars_refs:
+                        keyWithoutOwner = re.sub(r'^.*?\.', '', key)
+                        subKey = f'{arg.op_id}.{keyWithoutOwner}'
+                        if key == subKey:
+                            pval = self.get_value(ownerMethod.m_obj_vars_refs[subKey][0][i], ownerMethod.m_obj_vars_refs[subKey][1], arg.isGlobal, older = True)
+                            self.mem = new_mem
+                            self.register_value(destinationMethod.m_vars[ownerMethod.m_obj_vars_refs[subKey][1]][f'{destinationMethod.m_param_ids[argNum][i]}.{keyWithoutOwner}'].address, pval, ownerMethod.m_obj_vars_refs[subKey][1])
+                            self.mem = self.t_mem
+                    self.mem = new_mem
             self.mem = new_mem
     
     def memberVar(self, att, l_address):

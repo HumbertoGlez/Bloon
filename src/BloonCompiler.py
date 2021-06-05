@@ -18,6 +18,7 @@ class Method:
     m_param_addrs: List[Any] = attr.ib(attr.Factory(list))
     m_param_refs: List[Any] = attr.ib(attr.Factory(list))
     m_param_types: List[str] = attr.ib(attr.Factory(list))
+    m_param_ids: List[str] = attr.ib(attr.Factory(list))
     m_start: int = attr.ib(0)
     m_end: int = attr.ib(0)
     m_temps: Dict[str, int] = {'int': 0, 'float': 0, 'char': 0, 'string': 0, 'Any': 0}
@@ -306,6 +307,7 @@ class Compiler:
             if size > 1:
                 nxt_a = method.get_address(param_type)
             method.m_param_addrs.append([address])
+            method.m_param_ids.append([param_id])
             if pt not in self.basicTypes:
                 method.m_vars[param_type][param_id] = Var(address, False, dims, pt, nxt_a, True)
                 self.define_object_variables(method, False, param_id, pt, True)
@@ -320,6 +322,7 @@ class Compiler:
                 else:
                     method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False, next=nxt_a, isRef=True)
                 method.m_param_addrs[-1].append(address)
+                method.m_param_ids[-1].append(f'{param_id}{i}')
         elif param_dim == 2:
             limit2 = self.upperLimits.pop()
             limit = self.upperLimits.pop()
@@ -341,6 +344,7 @@ class Compiler:
             if size > 1:
                 nxt_a = method.get_address(param_type)
             method.m_param_addrs.append([address])
+            method.m_param_ids.append([param_id])
             if pt not in self.basicTypes:
                 method.m_vars[param_type][param_id] = Var(address, False, dims, pt, nxt_a, True)
                 self.define_object_variables(method, False, param_id, pt, True)
@@ -355,9 +359,11 @@ class Compiler:
                 else:
                     method.m_vars[param_type][f'{param_id}{i}'] = Var(address, False, next=nxt_a, isRef=True)
                 method.m_param_addrs[-1].append(address)
+                method.m_param_ids[-1].append(f'{param_id}{i}')
         else:
             address = method.get_address(param_type)
             method.m_param_addrs.append(address)
+            method.m_param_ids.append(param_id)
             if pt not in self.basicTypes:
                 method.m_vars[param_type][param_id] = Var(address, False, class_id=pt)
                 self.define_object_variables(method, False, param_id, pt)
@@ -830,11 +836,12 @@ class Compiler:
                 # We dont add this temporal to the count per type because it was already added to var table
             # Use method signature to pass arguments to parameters
             if cl == False:
-                self.quad_queue.append(Quadruple("ERA", ans=id))
+                self.quad_queue.append(Quadruple("ERA", [self.methodLoc_stack[-1], self.method_stack[-1], cl, id, self.parentId], ans=id))
             else:
                 self.quad_queue.append(Quadruple("ERA", [self.methodLoc_stack[-1], self.method_stack[-1], cl, id, self.parentId], Operand(cl), ans=id))
             for i in range(method.m_param_count):
                 argument = self.operand_stack.pop()
+                # print (argument.op_type, method.m_param_types[method.m_param_count - 1 - i])
                 if argument.op_type == method.m_param_types[method.m_param_count -1 - i]:
                     self.quad_queue.append(Quadruple("PARAM", argument, None, method.m_param_count -1 - i))
                 else:
