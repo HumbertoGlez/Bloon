@@ -1,0 +1,54 @@
+program Team_pp;
+
+ class Persona {
+    attributes:
+        edad : int;
+        nombre[30] : char;
+    methods:
+        int meth uno(int x) {
+            return(this.edad - x);
+        }
+ };
+
+ vars
+    i, p, j : int;
+    estudiante : Persona;
+
+int meth fact(int j) {
+    i = j + (p - j * 2 + j);
+    cond (j == 1) then {
+        return (j);
+    }
+    else {
+        return(j * fact(j - 1));
+    }
+}
+
+vars
+    x : int;
+
+void meth pelos(int y) {
+    read(estudiante.edad);
+    x = y;
+    
+    while(x < 10) do {
+        write(estudiante.uno(x));
+        x = x + 1;
+    }
+}
+
+main() {
+    write("please enter a number (int)");
+    read(p);
+    j = p * 2;
+    i = fact(p);
+    write("please enter the name (string)");
+    read(estudiante.nombre);
+    write("please enter the age (int)");
+    pelos(p);
+
+    i = 1;
+    floop i to 10 do {
+        write("HelloWorld", estudiante.nombre, fact(estudiante.edad));
+    }
+}
